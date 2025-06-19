@@ -36,7 +36,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4" role="navigation">
         <div class="container">
-            <a class="navbar-brand" href="<?= $this->url('task') ?>">
+            <a class="navbar-brand" href="<?= $this->url('task-manager') ?>">
                 <i class="fas fa-tasks"></i>
                 <span class="navbar-text text-light">TaskManager</span>
             </a>
@@ -53,13 +53,13 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= $this->url('task') ?>">
+                        <a class="nav-link" href="<?= $this->url('task-manager') ?>">
                             <i class="fas fa-list"></i> Tarefas
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= $this->url('category') ?>">
-                            <i class="fas fa-tags"></i> Categorias
+                        <a class="nav-link" href="<?= $this->url('home') ?>">
+                            <i class="fas fa-home"></i> Dashboard
                         </a>
                     </li>
                 </ul>
@@ -69,11 +69,11 @@
                             <i class="fas fa-plus"></i> Novo
                         </a>
                         <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <a class="dropdown-item" href="<?= $this->url('task', ['action' => 'add']) ?>">
+                            <a class="dropdown-item" href="<?= $this->url('task-manager/create') ?>">
                                 <i class="fas fa-plus-circle"></i> Nova Tarefa
                             </a>
-                            <a class="dropdown-item" href="<?= $this->url('category', ['action' => 'add']) ?>">
-                                <i class="fas fa-tag"></i> Nova Categoria
+                            <a class="dropdown-item" href="<?= $this->url('task-manager/statistics') ?>">
+                                <i class="fas fa-chart-bar"></i> Estatísticas
                             </a>
                         </div>
                     </li>
