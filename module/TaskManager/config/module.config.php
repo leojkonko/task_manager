@@ -7,6 +7,9 @@ namespace TaskManager;
 use Laminas\Router\Http\Literal;
 use Laminas\Router\Http\Segment;
 use Laminas\Db\Adapter\AdapterInterface;
+use Laminas\Db\TableGateway\TableGateway;
+use Laminas\Db\ResultSet\ResultSet;
+use ArrayObject;
 
 return [
     'router' => [
@@ -136,8 +139,18 @@ return [
             },
             Repository\TaskRepository::class => function ($container) {
                 return new Repository\TaskRepository(
-                    $container->get(AdapterInterface::class)
+                    $container->get(Model\TaskTable::class)
                 );
+            },
+            Model\TaskTable::class => function ($container) {
+                $tableGateway = $container->get(Model\TaskTableGateway::class);
+                return new Model\TaskTable($tableGateway);
+            },
+            Model\TaskTableGateway::class => function ($container) {
+                $dbAdapter = $container->get(AdapterInterface::class);
+                $resultSetPrototype = new ResultSet();
+                $resultSetPrototype->setArrayObjectPrototype(new ArrayObject());
+                return new TableGateway('tasks', $dbAdapter, null, $resultSetPrototype);
             },
         ],
     ],

@@ -6,6 +6,7 @@ namespace TaskManager\Controller;
 
 use TaskManager\Service\TaskService;
 use TaskManager\Entity\Task;
+use TaskManager\Form\TaskForm;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
@@ -135,48 +136,65 @@ class TaskController extends AbstractActionController
      */
     public function createAction()
     {
+        $form = new TaskForm();
+        $form->get('submit')->setValue('Criar Tarefa');
+        
+        // Definir valores padrão
+        $form->get('status')->setValue(Task::STATUS_PENDING);
+        $form->get('priority')->setValue(Task::PRIORITY_MEDIUM);
+
         $request = $this->getRequest();
         
         if ($request instanceof Request && $request->isPost()) {
-            $data = $request->getPost()->toArray();
-            $data['user_id'] = 1; // Usuário fixo para teste
+            $form->setData($request->getPost());
             
-            try {
-                $task = $this->taskService->createTask($data);
-                
-                if ($request->getHeader('X-Requested-With')) {
-                    return new JsonModel([
-                        'success' => true,
-                        'message' => 'Tarefa criada com sucesso',
-                        'data' => $task->toArray()
-                    ]);
+            if ($form->isValid()) {
+                try {
+                    $data = $form->getTaskData();
+                    $data['user_id'] = 1; // Usuário fixo para teste
+                    
+                    $task = $this->taskService->createTask($data);
+                    
+                    if ($request->getHeader('X-Requested-With')) {
+                        return new JsonModel([
+                            'success' => true,
+                            'message' => 'Tarefa criada com sucesso',
+                            'data' => $task->toArray()
+                        ]);
+                    }
+                    
+                    $this->flashMessenger()->addSuccessMessage('Tarefa criada com sucesso');
+                    return $this->redirect()->toRoute('task-manager/view', ['id' => $task->getId()]);
+                    
+                } catch (\Exception $e) {
+                    if ($request->getHeader('X-Requested-With')) {
+                        return new JsonModel([
+                            'success' => false,
+                            'message' => $e->getMessage()
+                        ]);
+                    }
+                    
+                    $this->flashMessenger()->addErrorMessage($e->getMessage());
                 }
-                
-                $this->flashMessenger()->addSuccessMessage('Tarefa criada com sucesso');
-                return $this->redirect()->toRoute('task-manager/view', ['id' => $task->getId()]);
-                
-            } catch (\InvalidArgumentException $e) {
+            } else {
+                // Formulário inválido - exibir erros
                 if ($request->getHeader('X-Requested-With')) {
+                    $errors = [];
+                    foreach ($form->getMessages() as $field => $fieldErrors) {
+                        $errors[$field] = array_values($fieldErrors);
+                    }
+                    
                     return new JsonModel([
                         'success' => false,
-                        'message' => $e->getMessage()
+                        'message' => 'Dados do formulário inválidos',
+                        'errors' => $errors
                     ]);
                 }
-                
-                $this->flashMessenger()->addErrorMessage($e->getMessage());
-            } catch (\Exception $e) {
-                if ($request->getHeader('X-Requested-With')) {
-                    return new JsonModel([
-                        'success' => false,
-                        'message' => 'Erro interno do servidor'
-                    ]);
-                }
-                
-                $this->flashMessenger()->addErrorMessage('Erro ao criar tarefa');
             }
         }
 
         return new ViewModel([
+            'form' => $form,
             'availableStatuses' => Task::getAvailableStatuses(),
             'availablePriorities' => Task::getAvailablePriorities(),
         ]);
@@ -200,47 +218,60 @@ class TaskController extends AbstractActionController
             return $this->redirect()->toRoute('task-manager');
         }
 
+        $form = new TaskForm();
+        $form->get('submit')->setValue('Atualizar Tarefa');
+        $form->populateFromTask($task);
+
         $request = $this->getRequest();
         
         if ($request instanceof Request && $request->isPost()) {
-            $data = $request->getPost()->toArray();
+            $form->setData($request->getPost());
             
-            try {
-                $updatedTask = $this->taskService->updateTask($id, $data);
-                
-                if ($request->getHeader('X-Requested-With')) {
-                    return new JsonModel([
-                        'success' => true,
-                        'message' => 'Tarefa atualizada com sucesso',
-                        'data' => $updatedTask->toArray()
-                    ]);
+            if ($form->isValid()) {
+                try {
+                    $data = $form->getTaskData();
+                    $updatedTask = $this->taskService->updateTask($id, $data);
+                    
+                    if ($request->getHeader('X-Requested-With')) {
+                        return new JsonModel([
+                            'success' => true,
+                            'message' => 'Tarefa atualizada com sucesso',
+                            'data' => $updatedTask->toArray()
+                        ]);
+                    }
+                    
+                    $this->flashMessenger()->addSuccessMessage('Tarefa atualizada com sucesso');
+                    return $this->redirect()->toRoute('task-manager/view', ['id' => $id]);
+                    
+                } catch (\Exception $e) {
+                    if ($request->getHeader('X-Requested-With')) {
+                        return new JsonModel([
+                            'success' => false,
+                            'message' => $e->getMessage()
+                        ]);
+                    }
+                    
+                    $this->flashMessenger()->addErrorMessage($e->getMessage());
                 }
-                
-                $this->flashMessenger()->addSuccessMessage('Tarefa atualizada com sucesso');
-                return $this->redirect()->toRoute('task-manager/view', ['id' => $id]);
-                
-            } catch (\InvalidArgumentException $e) {
+            } else {
+                // Formulário inválido - exibir erros
                 if ($request->getHeader('X-Requested-With')) {
+                    $errors = [];
+                    foreach ($form->getMessages() as $field => $fieldErrors) {
+                        $errors[$field] = array_values($fieldErrors);
+                    }
+                    
                     return new JsonModel([
                         'success' => false,
-                        'message' => $e->getMessage()
+                        'message' => 'Dados do formulário inválidos',
+                        'errors' => $errors
                     ]);
                 }
-                
-                $this->flashMessenger()->addErrorMessage($e->getMessage());
-            } catch (\Exception $e) {
-                if ($request->getHeader('X-Requested-With')) {
-                    return new JsonModel([
-                        'success' => false,
-                        'message' => 'Erro interno do servidor'
-                    ]);
-                }
-                
-                $this->flashMessenger()->addErrorMessage('Erro ao atualizar tarefa');
             }
         }
 
         return new ViewModel([
+            'form' => $form,
             'task' => $task->toArray(),
             'availableStatuses' => Task::getAvailableStatuses(),
             'availablePriorities' => Task::getAvailablePriorities(),

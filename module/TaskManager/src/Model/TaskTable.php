@@ -1,117 +1,279 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TaskManager\Model;
 
-use RuntimeException;
-use Laminas\Db\TableGateway\TableGatewayInterface;
+use Laminas\Db\TableGateway\TableGateway;
+use Laminas\Db\Sql\Select;
+use Laminas\Db\Sql\Where;
+use Laminas\Db\Sql\Expression;
+use TaskManager\Entity\Task;
+use DateTime;
 
+/**
+ * Table Data Gateway para a tabela tasks
+ */
 class TaskTable
 {
-    private $tableGateway;
+    private TableGateway $tableGateway;
 
-    public function __construct(TableGatewayInterface $tableGateway)
+    public function __construct(TableGateway $tableGateway)
     {
         $this->tableGateway = $tableGateway;
     }
 
-    public function fetchAll($userId = null)
+    /**
+     * Busca todas as tarefas de um usuário
+     */
+    public function fetchAll(int $userId): array
     {
-        if ($userId) {
-            return $this->tableGateway->select(['user_id' => $userId]);
-        }
-        return $this->tableGateway->select();
+        $select = $this->tableGateway->getSql()->select();
+        $select->where(['user_id' => $userId])
+               ->order('created_at DESC');
+
+        $resultSet = $this->tableGateway->selectWith($select);
+        return $this->resultSetToTaskArray($resultSet);
     }
 
-    public function getTask($id)
+    /**
+     * Busca tarefas com filtros e paginação
+     */
+    public function fetchWithPagination(int $userId, int $page = 1, int $limit = 10, array $filters = []): array
     {
-        $id = (int) $id;
+        $select = $this->tableGateway->getSql()->select();
+        $countSelect = $this->tableGateway->getSql()->select();
+        
+        // Aplicar filtros
+        $where = $this->buildWhereClause($userId, $filters);
+        $select->where($where);
+        $countSelect->where($where);
+
+        // Contar total de registros
+        $countSelect->columns(['total' => new Expression('COUNT(*)')]);
+        $countResult = $this->tableGateway->selectWith($countSelect);
+        $total = $countResult->current()['total'];
+
+        // Aplicar ordenação
+        $orderBy = $filters['order_by'] ?? 'created_at';
+        $orderDirection = $filters['order_direction'] ?? 'DESC';
+        $select->order($orderBy . ' ' . $orderDirection);
+
+        // Aplicar paginação
+        $offset = ($page - 1) * $limit;
+        $select->limit($limit)->offset($offset);
+
+        $resultSet = $this->tableGateway->selectWith($select);
+        $tasks = $this->resultSetToTaskArray($resultSet);
+
+        return [
+            'tasks' => $tasks,
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+            'total_pages' => ceil($total / $limit),
+        ];
+    }
+
+    /**
+     * Busca uma tarefa pelo ID
+     */
+    public function getTask(int $id): ?Task
+    {
         $rowset = $this->tableGateway->select(['id' => $id]);
         $row = $rowset->current();
-        if (! $row) {
-            throw new RuntimeException(sprintf(
-                'Could not find row with identifier %d',
-                $id
-            ));
+        
+        if (!$row) {
+            return null;
         }
 
-        return $row;
+        return $this->arrayToTask($row->getArrayCopy());
     }
 
-    public function saveTask(Task $task)
+    /**
+     * Salva uma tarefa (insert ou update)
+     */
+    public function saveTask(Task $task): Task
     {
-        $data = [
-            'title' => $task->title,
-            'description' => $task->description,
-            'status' => $task->status,
-            'priority' => $task->priority,
-            'due_date' => $task->due_date,
-            'user_id' => $task->user_id,
-            'category_id' => $task->category_id,
-        ];
+        $data = $this->taskToArray($task);
 
-        $id = (int) $task->id;
-
-        if ($id === 0) {
+        if ($task->getId()) {
+            // Update
+            $data['updated_at'] = date('Y-m-d H:i:s');
+            unset($data['id'], $data['created_at']);
+            
+            $this->tableGateway->update($data, ['id' => $task->getId()]);
+        } else {
+            // Insert
+            $now = date('Y-m-d H:i:s');
+            $data['created_at'] = $now;
+            $data['updated_at'] = $now;
+            unset($data['id']);
+            
             $this->tableGateway->insert($data);
-            return;
+            $task->setId($this->tableGateway->getLastInsertValue());
         }
 
-        try {
-            $this->getTask($id);
-        } catch (RuntimeException $e) {
-            throw new RuntimeException(sprintf(
-                'Cannot update task with identifier %d; does not exist',
-                $id
-            ));
-        }
-
-        // Atualizar completed_at se status mudou para completed
-        if ($task->status === 'completed' && !$task->completed_at) {
-            $data['completed_at'] = date('Y-m-d H:i:s');
-        } elseif ($task->status !== 'completed') {
-            $data['completed_at'] = null;
-        }
-
-        $this->tableGateway->update($data, ['id' => $id]);
+        return $this->getTask($task->getId());
     }
 
-    public function deleteTask($id)
+    /**
+     * Exclui uma tarefa
+     */
+    public function deleteTask(int $id): bool
     {
-        $this->tableGateway->delete(['id' => (int) $id]);
+        $result = $this->tableGateway->delete(['id' => $id]);
+        return $result > 0;
     }
 
-    public function getTasksByStatus($status, $userId = null)
+    /**
+     * Busca tarefas vencidas de um usuário
+     */
+    public function findOverdueTasks(int $userId): array
     {
-        $where = ['status' => $status];
-        if ($userId) {
-            $where['user_id'] = $userId;
-        }
-        return $this->tableGateway->select($where);
-    }
-
-    public function getTasksByCategory($categoryId, $userId = null)
-    {
-        $where = ['category_id' => $categoryId];
-        if ($userId) {
-            $where['user_id'] = $userId;
-        }
-        return $this->tableGateway->select($where);
-    }
-
-    public function getOverdueTasks($userId = null)
-    {
-        $sql = $this->tableGateway->getSql();
-        $select = $sql->select();
-
+        $select = $this->tableGateway->getSql()->select();
         $select->where([
-            'due_date < ?' => date('Y-m-d H:i:s'),
-            'status != ?' => 'completed'
-        ]);
+            'user_id' => $userId,
+            'status != ?' => Task::STATUS_COMPLETED,
+            'due_date IS NOT NULL',
+            'due_date < ?' => date('Y-m-d H:i:s')
+        ])->order('due_date ASC');
 
-        if ($userId) {
-            $select->where(['user_id' => $userId]);
+        $resultSet = $this->tableGateway->selectWith($select);
+        return $this->resultSetToTaskArray($resultSet);
+    }
+
+    /**
+     * Busca estatísticas das tarefas de um usuário
+     */
+    public function getStatistics(int $userId): array
+    {
+        // Total de tarefas
+        $totalSelect = $this->tableGateway->getSql()->select();
+        $totalSelect->where(['user_id' => $userId])
+                   ->columns(['total' => new Expression('COUNT(*)')]);
+        $totalResult = $this->tableGateway->selectWith($totalSelect);
+        $total = $totalResult->current()['total'];
+
+        // Tarefas por status
+        $statusSelect = $this->tableGateway->getSql()->select();
+        $statusSelect->where(['user_id' => $userId])
+                    ->columns(['status', 'count' => new Expression('COUNT(*)')])
+                    ->group('status');
+        $statusResult = $this->tableGateway->selectWith($statusSelect);
+        
+        $byStatus = [];
+        foreach ($statusResult as $row) {
+            $byStatus[$row['status']] = (int)$row['count'];
         }
 
-        return $this->tableGateway->selectWith($select);
+        // Tarefas vencidas
+        $overdueSelect = $this->tableGateway->getSql()->select();
+        $overdueSelect->where([
+            'user_id' => $userId,
+            'status != ?' => Task::STATUS_COMPLETED,
+            'due_date IS NOT NULL',
+            'due_date < ?' => date('Y-m-d H:i:s')
+        ])->columns(['overdue' => new Expression('COUNT(*)')]);
+        $overdueResult = $this->tableGateway->selectWith($overdueSelect);
+        $overdue = $overdueResult->current()['overdue'];
+
+        return [
+            'total' => $total,
+            'by_status' => $byStatus,
+            'overdue' => $overdue,
+        ];
+    }
+
+    /**
+     * Constrói cláusula WHERE com base nos filtros
+     */
+    private function buildWhereClause(int $userId, array $filters): Where
+    {
+        $where = new Where();
+        $where->equalTo('user_id', $userId);
+
+        if (!empty($filters['status'])) {
+            $where->equalTo('status', $filters['status']);
+        }
+
+        if (!empty($filters['priority'])) {
+            $where->equalTo('priority', $filters['priority']);
+        }
+
+        if (!empty($filters['category_id'])) {
+            $where->equalTo('category_id', $filters['category_id']);
+        }
+
+        if (!empty($filters['search'])) {
+            $where->like('title', '%' . $filters['search'] . '%');
+        }
+
+        return $where;
+    }
+
+    /**
+     * Converte array do banco para objeto Task
+     */
+    private function arrayToTask(array $data): Task
+    {
+        $task = new Task();
+        $task->setId($data['id'])
+             ->setTitle($data['title'])
+             ->setDescription($data['description'])
+             ->setStatus($data['status'])
+             ->setPriority($data['priority'])
+             ->setUserId($data['user_id'])
+             ->setCategoryId($data['category_id']);
+
+        if ($data['due_date']) {
+            $task->setDueDate(new DateTime($data['due_date']));
+        }
+
+        if ($data['completed_at']) {
+            $task->setCompletedAt(new DateTime($data['completed_at']));
+        }
+
+        if ($data['created_at']) {
+            $task->setCreatedAt(new DateTime($data['created_at']));
+        }
+
+        if ($data['updated_at']) {
+            $task->setUpdatedAt(new DateTime($data['updated_at']));
+        }
+
+        return $task;
+    }
+
+    /**
+     * Converte objeto Task para array
+     */
+    private function taskToArray(Task $task): array
+    {
+        return [
+            'id' => $task->getId(),
+            'title' => $task->getTitle(),
+            'description' => $task->getDescription(),
+            'status' => $task->getStatus(),
+            'priority' => $task->getPriority(),
+            'user_id' => $task->getUserId(),
+            'category_id' => $task->getCategoryId(),
+            'due_date' => $task->getDueDate() ? $task->getDueDate()->format('Y-m-d H:i:s') : null,
+            'completed_at' => $task->getCompletedAt() ? $task->getCompletedAt()->format('Y-m-d H:i:s') : null,
+            'created_at' => $task->getCreatedAt() ? $task->getCreatedAt()->format('Y-m-d H:i:s') : null,
+            'updated_at' => $task->getUpdatedAt() ? $task->getUpdatedAt()->format('Y-m-d H:i:s') : null,
+        ];
+    }
+
+    /**
+     * Converte ResultSet para array de Tasks
+     */
+    private function resultSetToTaskArray($resultSet): array
+    {
+        $tasks = [];
+        foreach ($resultSet as $row) {
+            $tasks[] = $this->arrayToTask($row->getArrayCopy());
+        }
+        return $tasks;
     }
 }

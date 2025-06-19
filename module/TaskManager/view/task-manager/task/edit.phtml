@@ -1,111 +1,202 @@
 <?php
-$title = isset($this->id) ? 'Editar Tarefa' : 'Nova Tarefa';
+$title = 'Editar Tarefa: ' . $task['title'];
 $this->headTitle($title);
 ?>
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0"><?= $this->escapeHtml($title) ?></h4>
-            </div>
-            <div class="card-body">
-                <?php
-                $form = $this->form;
-                $form->setAttribute('action', $this->url('task', ['action' => isset($this->id) ? 'edit' : 'add', 'id' => $this->id ?? null]));
-                $form->prepare();
-                ?>
 
-                <?= $this->form()->openTag($form) ?>
-                
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <?= $this->formLabel($form->get('title')) ?>
-                            <?= $this->formElement($form->get('title')) ?>
-                            <?= $this->formElementErrors($form->get('title')) ?>
-                        </div>
-                    </div>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Editar Tarefa</h3>
                 </div>
+                <div class="card-body">
+                    <?php
+                    $form->setAttribute('action', $this->url('task-manager/edit', ['id' => $task['id']]));
+                    $form->prepare();
+                    echo $this->form()->openTag($form);
+                    ?>
 
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <?= $this->formLabel($form->get('description')) ?>
-                            <?= $this->formElement($form->get('description')) ?>
-                            <?= $this->formElementErrors($form->get('description')) ?>
+                    <!-- Exibir erros de validação -->
+                    <?php if ($form->getMessages()): ?>
+                        <div class="alert alert-danger">
+                            <h6>Por favor, corrija os seguintes erros:</h6>
+                            <ul class="mb-0">
+                                <?php foreach ($form->getMessages() as $field => $errors): ?>
+                                    <?php foreach ($errors as $error): ?>
+                                        <li><?= $this->escapeHtml($error) ?></li>
+                                    <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- CSRF Token (hidden) -->
+                    <?= $this->formElement($form->get('csrf')) ?>
+                    <?= $this->formElement($form->get('id')) ?>
+
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('title')) ?>
+                        <?= $this->formElement($form->get('title')) ?>
+                        <?= $this->formElementErrors($form->get('title')) ?>
+                    </div>
+
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('description')) ?>
+                        <?= $this->formElement($form->get('description')) ?>
+                        <?= $this->formElementErrors($form->get('description')) ?>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <?= $this->formLabel($form->get('status')) ?>
+                                <?= $this->formElement($form->get('status')) ?>
+                                <?= $this->formElementErrors($form->get('status')) ?>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <?= $this->formLabel($form->get('priority')) ?>
+                                <?= $this->formElement($form->get('priority')) ?>
+                                <?= $this->formElementErrors($form->get('priority')) ?>
+                            </div>
                         </div>
                     </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <?= $this->formLabel($form->get('due_date')) ?>
+                                <?= $this->formElement($form->get('due_date')) ?>
+                                <?= $this->formElementErrors($form->get('due_date')) ?>
+                                <div class="form-text">Deixe em branco se não houver prazo específico</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <?= $this->formLabel($form->get('category_id')) ?>
+                                <?= $this->formElement($form->get('category_id')) ?>
+                                <?= $this->formElementErrors($form->get('category_id')) ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informações adicionais -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Data de Criação</label>
+                                <input type="text" class="form-control" value="<?= date('d/m/Y H:i', strtotime($task['created_at'])) ?>" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Última Atualização</label>
+                                <input type="text" class="form-control" value="<?= date('d/m/Y H:i', strtotime($task['updated_at'])) ?>" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <?php if ($task['completed_at']): ?>
+                        <div class="mb-3">
+                            <label class="form-label">Data de Conclusão</label>
+                            <input type="text" class="form-control" value="<?= date('d/m/Y H:i', strtotime($task['completed_at'])) ?>" readonly>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="<?= $this->url('task-manager') ?>" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <a href="<?= $this->url('task-manager/view', ['id' => $task['id']]) ?>" class="btn btn-outline-info">
+                                <i class="fas fa-eye"></i> Visualizar
+                            </a>
+                        </div>
+                        <div>
+                            <?= $this->formElement($form->get('submit')) ?>
+                            <button type="button" class="btn btn-danger" onclick="deleteTask(<?= $task['id'] ?>)">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                        </div>
+                    </div>
+
+                    <?= $this->form()->closeTag() ?>
                 </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <?= $this->formLabel($form->get('status')) ?>
-                            <?= $this->formElement($form->get('status')) ?>
-                            <?= $this->formElementErrors($form->get('status')) ?>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <?= $this->formLabel($form->get('priority')) ?>
-                            <?= $this->formElement($form->get('priority')) ?>
-                            <?= $this->formElementErrors($form->get('priority')) ?>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <?= $this->formLabel($form->get('category_id')) ?>
-                            <?= $this->formElement($form->get('category_id')) ?>
-                            <?= $this->formElementErrors($form->get('category_id')) ?>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <?= $this->formLabel($form->get('due_date')) ?>
-                            <?= $this->formElement($form->get('due_date')) ?>
-                            <?= $this->formElementErrors($form->get('due_date')) ?>
-                        </div>
-                    </div>
-                </div>
-
-                <?= $this->formHidden($form->get('id')) ?>
-
-                <div class="form-group mt-3">
-                    <?= $this->formElement($form->get('submit')) ?>
-                    <a href="<?= $this->url('task') ?>" class="btn btn-secondary ml-2">Cancelar</a>
-                </div>
-
-                <?= $this->form()->closeTag() ?>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Dicas</h5>
-            </div>
-            <div class="card-body">
-                <ul class="list-unstyled">
-                    <li><i class="fas fa-lightbulb text-warning"></i> <strong>Título:</strong> Seja claro e específico</li>
-                    <li><i class="fas fa-align-left text-info"></i> <strong>Descrição:</strong> Detalhe o que precisa ser feito</li>
-                    <li><i class="fas fa-flag text-danger"></i> <strong>Prioridade:</strong> Ajuda a organizar suas tarefas</li>
-                    <li><i class="fas fa-calendar text-primary"></i> <strong>Prazo:</strong> Defina quando deve ser concluída</li>
-                    <li><i class="fas fa-tag text-success"></i> <strong>Categoria:</strong> Organize por projeto ou tipo</li>
-                </ul>
-                
-                <hr>
-                
-                <h6>Status das Tarefas:</h6>
-                <ul class="list-unstyled small">
-                    <li><span class="badge badge-warning">Pendente</span> - Ainda não iniciada</li>
-                    <li><span class="badge badge-info">Em Andamento</span> - Sendo executada</li>
-                    <li><span class="badge badge-success">Concluída</span> - Finalizada</li>
-                    <li><span class="badge badge-secondary">Cancelada</span> - Não será executada</li>
-                </ul>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// Validação client-side adicional
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('task-form');
+    const titleInput = document.getElementById('title');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Validar título
+        if (titleInput.value.trim().length < 3) {
+            isValid = false;
+            titleInput.classList.add('is-invalid');
+            showFieldError(titleInput, 'O título deve ter pelo menos 3 caracteres');
+        } else {
+            titleInput.classList.remove('is-invalid');
+            hideFieldError(titleInput);
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+    
+    // Remover erro ao digitar
+    titleInput.addEventListener('input', function() {
+        if (this.value.trim().length >= 3) {
+            this.classList.remove('is-invalid');
+            hideFieldError(this);
+        }
+    });
+});
+
+function showFieldError(field, message) {
+    hideFieldError(field);
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'invalid-feedback';
+    errorDiv.textContent = message;
+    field.parentNode.appendChild(errorDiv);
+}
+
+function hideFieldError(field) {
+    const errorDiv = field.parentNode.querySelector('.invalid-feedback');
+    if (errorDiv) {
+        errorDiv.remove();
+    }
+}
+
+function deleteTask(id) {
+    if (confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
+        fetch(`/tasks/delete/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Tarefa excluída com sucesso!');
+                window.location.href = '/tasks';
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao excluir tarefa');
+        });
+    }
+}
+</script>
