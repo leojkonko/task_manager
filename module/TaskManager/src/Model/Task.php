@@ -36,7 +36,7 @@ class Task
     /**
      * Lista de status válidos
      */
-    public static function getValidStatuses(): array
+    public static function getValidStatuses()
     {
         return [
             self::STATUS_PENDING,
@@ -49,7 +49,7 @@ class Task
     /**
      * Lista de prioridades válidas
      */
-    public static function getValidPriorities(): array
+    public static function getValidPriorities()
     {
         return [
             self::PRIORITY_LOW,
@@ -60,127 +60,165 @@ class Task
     }
 
     /**
-     * Validar os dados da tarefa
+     * Troca dados do array com validação
      */
-    public function validate(): array
-    {
-        $errors = [];
-
-        // Validar título (obrigatório)
-        if (empty(trim($this->title))) {
-            $errors['title'] = 'O título da tarefa é obrigatório.';
-        } elseif (strlen(trim($this->title)) < 3) {
-            $errors['title'] = 'O título deve ter pelo menos 3 caracteres.';
-        } elseif (strlen(trim($this->title)) > 200) {
-            $errors['title'] = 'O título não pode ter mais de 200 caracteres.';
-        }
-
-        // Validar descrição (opcional, mas se fornecida, deve ter tamanho válido)
-        if (!empty($this->description) && strlen($this->description) > 2000) {
-            $errors['description'] = 'A descrição não pode ter mais de 2000 caracteres.';
-        }
-
-        // Validar status
-        if (!in_array($this->status, self::getValidStatuses())) {
-            $errors['status'] = 'Status inválido.';
-        }
-
-        // Validar prioridade
-        if (!in_array($this->priority, self::getValidPriorities())) {
-            $errors['priority'] = 'Prioridade inválida.';
-        }
-
-        // Validar data de vencimento (se fornecida)
-        if (!empty($this->due_date)) {
-            $date = DateTime::createFromFormat('Y-m-d H:i:s', $this->due_date);
-            if (!$date) {
-                // Tentar formato alternativo
-                $date = DateTime::createFromFormat('Y-m-d\TH:i', $this->due_date);
-                if (!$date) {
-                    $errors['due_date'] = 'Formato de data inválido.';
-                }
-            }
-        }
-
-        // Validar user_id (obrigatório)
-        if (empty($this->user_id) || !is_numeric($this->user_id)) {
-            $errors['user_id'] = 'ID do usuário é obrigatório e deve ser numérico.';
-        }
-
-        return $errors;
-    }
-
-    /**
-     * Verificar se a tarefa é válida
-     */
-    public function isValid(): bool
-    {
-        return empty($this->validate());
-    }
-
     public function exchangeArray(array $data)
     {
-        $this->id = !empty($data['id']) ? (int) $data['id'] : null;
-        $this->title = isset($data['title']) ? trim($data['title']) : null;
-        $this->description = isset($data['description']) ? trim($data['description']) : null;
-        $this->status = !empty($data['status']) ? $data['status'] : self::STATUS_PENDING;
-        $this->priority = !empty($data['priority']) ? $data['priority'] : self::PRIORITY_MEDIUM;
-        $this->due_date = !empty($data['due_date']) ? $this->formatDate($data['due_date']) : null;
+        $this->id = !empty($data['id']) ? (int)$data['id'] : null;
+        
+        // Validar e definir título
+        if (isset($data['title'])) {
+            $this->setTitle($data['title']);
+        }
+        
+        // Definir descrição
+        $this->description = !empty($data['description']) ? trim($data['description']) : null;
+        
+        // Validar e definir status
+        if (isset($data['status'])) {
+            $this->setStatus($data['status']);
+        } else {
+            $this->status = self::STATUS_PENDING;
+        }
+        
+        // Validar e definir prioridade
+        if (isset($data['priority'])) {
+            $this->setPriority($data['priority']);
+        } else {
+            $this->priority = self::PRIORITY_MEDIUM;
+        }
+        
+        // Validar e definir data de vencimento
+        if (isset($data['due_date'])) {
+            $this->setDueDate($data['due_date']);
+        }
+        
         $this->completed_at = !empty($data['completed_at']) ? $data['completed_at'] : null;
-        $this->user_id = !empty($data['user_id']) ? (int) $data['user_id'] : null;
-        $this->category_id = !empty($data['category_id']) ? (int) $data['category_id'] : null;
+        $this->user_id = !empty($data['user_id']) ? (int)$data['user_id'] : null;
+        $this->category_id = !empty($data['category_id']) ? (int)$data['category_id'] : null;
         $this->created_at = !empty($data['created_at']) ? $data['created_at'] : null;
         $this->updated_at = !empty($data['updated_at']) ? $data['updated_at'] : null;
     }
 
     /**
-     * Formatar data para o formato MySQL
+     * Validar e definir título da tarefa
      */
-    private function formatDate($date): ?string
+    public function setTitle($title)
     {
-        if (empty($date)) {
-            return null;
+        $title = trim($title);
+        
+        if (empty($title)) {
+            throw new InvalidArgumentException('O título da tarefa não pode estar vazio.');
         }
-
-        // Se já está no formato correto
-        if (DateTime::createFromFormat('Y-m-d H:i:s', $date)) {
-            return $date;
+        
+        if (strlen($title) > 200) {
+            throw new InvalidArgumentException('O título da tarefa não pode ter mais de 200 caracteres.');
         }
-
-        // Tentar formato datetime-local (HTML5)
-        $dateObj = DateTime::createFromFormat('Y-m-d\TH:i', $date);
-        if ($dateObj) {
-            return $dateObj->format('Y-m-d H:i:s');
+        
+        if (strlen($title) < 3) {
+            throw new InvalidArgumentException('O título da tarefa deve ter pelo menos 3 caracteres.');
         }
-
-        // Tentar outros formatos comuns
-        $formats = ['Y-m-d H:i', 'd/m/Y H:i', 'd/m/Y'];
-        foreach ($formats as $format) {
-            $dateObj = DateTime::createFromFormat($format, $date);
-            if ($dateObj) {
-                return $dateObj->format('Y-m-d H:i:s');
-            }
-        }
-
-        return null;
+        
+        $this->title = $title;
     }
 
     /**
-     * Marcar tarefa como concluída
+     * Validar e definir status da tarefa
      */
-    public function markAsCompleted(): void
+    public function setStatus($status)
     {
-        $this->status = self::STATUS_COMPLETED;
-        $this->completed_at = date('Y-m-d H:i:s');
+        if (!in_array($status, self::getValidStatuses())) {
+            throw new InvalidArgumentException(sprintf(
+                'Status "%s" é inválido. Status válidos são: %s',
+                $status,
+                implode(', ', self::getValidStatuses())
+            ));
+        }
+        
+        $this->status = $status;
+        
+        // Automaticamente definir completed_at quando status for completed
+        if ($status === self::STATUS_COMPLETED && !$this->completed_at) {
+            $this->completed_at = date('Y-m-d H:i:s');
+        } elseif ($status !== self::STATUS_COMPLETED) {
+            $this->completed_at = null;
+        }
     }
 
     /**
-     * Marcar tarefa como pendente
+     * Validar e definir prioridade da tarefa
      */
-    public function markAsPending(): void
+    public function setPriority($priority)
     {
-        $this->status = self::STATUS_PENDING;
-        $this->completed_at = null;
+        if (!in_array($priority, self::getValidPriorities())) {
+            throw new InvalidArgumentException(sprintf(
+                'Prioridade "%s" é inválida. Prioridades válidas são: %s',
+                $priority,
+                implode(', ', self::getValidPriorities())
+            ));
+        }
+        
+        $this->priority = $priority;
+    }
+
+    /**
+     * Validar e definir data de vencimento
+     */
+    public function setDueDate($dueDate)
+    {
+        if (empty($dueDate)) {
+            $this->due_date = null;
+            return;
+        }
+        
+        // Validar formato de data
+        if (!$this->isValidDateTime($dueDate)) {
+            throw new InvalidArgumentException('Data de vencimento deve estar em um formato válido.');
+        }
+        
+        $this->due_date = $dueDate;
+    }
+
+    /**
+     * Verificar se uma string é uma data/hora válida
+     */
+    private function isValidDateTime($dateTime)
+    {
+        if (DateTime::createFromFormat('Y-m-d H:i:s', $dateTime) !== false) {
+            return true;
+        }
+        
+        if (DateTime::createFromFormat('Y-m-d\TH:i', $dateTime) !== false) {
+            return true;
+        }
+        
+        if (DateTime::createFromFormat('Y-m-d', $dateTime) !== false) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Validar dados da tarefa
+     */
+    public function validate()
+    {
+        $errors = [];
+        
+        if (empty($this->title)) {
+            $errors[] = 'O título da tarefa é obrigatório.';
+        }
+        
+        if (empty($this->user_id)) {
+            $errors[] = 'O usuário da tarefa é obrigatório.';
+        }
+        
+        if (!empty($errors)) {
+            throw new DomainException('Dados da tarefa são inválidos: ' . implode(' ', $errors));
+        }
+        
+        return true;
     }
 
     public function getArrayCopy()
@@ -246,33 +284,66 @@ class Task
     }
 
     /**
+     * Verificar se a tarefa está concluída
+     */
+    public function isCompleted()
+    {
+        return $this->status === self::STATUS_COMPLETED;
+    }
+
+    /**
+     * Verificar se a tarefa está em andamento
+     */
+    public function isInProgress()
+    {
+        return $this->status === self::STATUS_IN_PROGRESS;
+    }
+
+    /**
+     * Verificar se a tarefa está pendente
+     */
+    public function isPending()
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    /**
      * Obter número de dias até o vencimento
      */
-    public function getDaysUntilDue(): ?int
+    public function getDaysUntilDue()
     {
         if (!$this->due_date) {
             return null;
         }
-
-        $dueDate = new DateTime($this->due_date);
+        
         $now = new DateTime();
-        $diff = $now->diff($dueDate);
-
-        return $diff->invert ? -$diff->days : $diff->days;
+        $dueDate = new DateTime($this->due_date);
+        $interval = $now->diff($dueDate);
+        
+        return $interval->invert ? -$interval->days : $interval->days;
     }
 
     /**
-     * Verificar se a tarefa vence hoje
+     * Marcar tarefa como concluída
      */
-    public function isDueToday(): bool
+    public function markAsCompleted()
     {
-        if (!$this->due_date) {
-            return false;
-        }
+        $this->setStatus(self::STATUS_COMPLETED);
+    }
 
-        $dueDate = new DateTime($this->due_date);
-        $today = new DateTime();
+    /**
+     * Marcar tarefa como em andamento
+     */
+    public function markAsInProgress()
+    {
+        $this->setStatus(self::STATUS_IN_PROGRESS);
+    }
 
-        return $dueDate->format('Y-m-d') === $today->format('Y-m-d');
+    /**
+     * Reiniciar tarefa para status pendente
+     */
+    public function markAsPending()
+    {
+        $this->setStatus(self::STATUS_PENDING);
     }
 }

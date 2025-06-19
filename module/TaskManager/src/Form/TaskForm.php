@@ -6,13 +6,15 @@ use Laminas\Form\Form;
 use Laminas\InputFilter\InputFilter;
 use Laminas\InputFilter\InputFilterAwareInterface;
 use Laminas\InputFilter\InputFilterInterface;
-use Laminas\Validator;
-use Laminas\Filter;
+use Laminas\Validator\StringLength;
+use Laminas\Validator\NotEmpty;
+use Laminas\Validator\InArray;
+use Laminas\Validator\Date;
 use TaskManager\Model\Task;
 
 class TaskForm extends Form implements InputFilterAwareInterface
 {
-    private $inputFilter;
+    protected $inputFilter;
 
     public function __construct($name = null)
     {
@@ -35,7 +37,7 @@ class TaskForm extends Form implements InputFilterAwareInterface
                 'maxlength' => 200,
                 'class' => 'form-control',
                 'placeholder' => 'Digite o título da tarefa',
-                'data-validation' => 'required'
+                'id' => 'title'
             ],
         ]);
 
@@ -48,48 +50,44 @@ class TaskForm extends Form implements InputFilterAwareInterface
             'attributes' => [
                 'class' => 'form-control',
                 'rows' => 4,
-                'maxlength' => 2000,
-                'placeholder' => 'Descreva os detalhes da tarefa'
+                'placeholder' => 'Descreva os detalhes da tarefa',
+                'id' => 'description'
             ],
         ]);
-
-        // Usar constantes da classe Task para os options
-        $statusOptions = [];
-        foreach (Task::getValidStatuses() as $status) {
-            $task = new Task();
-            $task->status = $status;
-            $statusOptions[$status] = $task->getStatusLabel();
-        }
 
         $this->add([
             'name' => 'status',
             'type' => 'select',
             'options' => [
                 'label' => 'Status',
-                'value_options' => $statusOptions,
+                'value_options' => [
+                    Task::STATUS_PENDING => 'Pendente',
+                    Task::STATUS_IN_PROGRESS => 'Em Andamento',
+                    Task::STATUS_COMPLETED => 'Concluída',
+                    Task::STATUS_CANCELLED => 'Cancelada',
+                ],
             ],
             'attributes' => [
                 'class' => 'form-control',
+                'id' => 'status'
             ],
         ]);
-
-        // Usar constantes da classe Task para prioridades
-        $priorityOptions = [];
-        foreach (Task::getValidPriorities() as $priority) {
-            $task = new Task();
-            $task->priority = $priority;
-            $priorityOptions[$priority] = $task->getPriorityLabel();
-        }
 
         $this->add([
             'name' => 'priority',
             'type' => 'select',
             'options' => [
                 'label' => 'Prioridade',
-                'value_options' => $priorityOptions,
+                'value_options' => [
+                    Task::PRIORITY_LOW => 'Baixa',
+                    Task::PRIORITY_MEDIUM => 'Média',
+                    Task::PRIORITY_HIGH => 'Alta',
+                    Task::PRIORITY_URGENT => 'Urgente',
+                ],
             ],
             'attributes' => [
                 'class' => 'form-control',
+                'id' => 'priority'
             ],
         ]);
 
@@ -101,7 +99,7 @@ class TaskForm extends Form implements InputFilterAwareInterface
             ],
             'attributes' => [
                 'class' => 'form-control',
-                'min' => date('Y-m-d\TH:i'), // Data mínima é hoje
+                'id' => 'due_date'
             ],
         ]);
 
@@ -111,10 +109,10 @@ class TaskForm extends Form implements InputFilterAwareInterface
             'options' => [
                 'label' => 'Categoria',
                 'value_options' => [], // Será preenchido no controller
-                'empty_option' => 'Selecione uma categoria (opcional)',
             ],
             'attributes' => [
                 'class' => 'form-control',
+                'id' => 'category_id'
             ],
         ]);
 
@@ -123,212 +121,141 @@ class TaskForm extends Form implements InputFilterAwareInterface
             'type' => 'submit',
             'attributes' => [
                 'value' => 'Salvar',
-                'id'    => 'submitbutton',
+                'id' => 'submitbutton',
                 'class' => 'btn btn-primary',
             ],
         ]);
-
-        // Configurar input filter
-        $this->setInputFilter($this->createInputFilter());
     }
 
-    /**
-     * Criar input filter com validações robustas
-     */
-    private function createInputFilter(): InputFilter
-    {
-        $inputFilter = new InputFilter();
-
-        // Validação para o título
-        $inputFilter->add([
-            'name' => 'title',
-            'required' => true,
-            'filters' => [
-                ['name' => Filter\StripTags::class],
-                ['name' => Filter\StringTrim::class],
-            ],
-            'validators' => [
-                [
-                    'name' => Validator\NotEmpty::class,
-                    'options' => [
-                        'messages' => [
-                            Validator\NotEmpty::IS_EMPTY => 'O título da tarefa é obrigatório.',
-                        ],
-                    ],
-                ],
-                [
-                    'name' => Validator\StringLength::class,
-                    'options' => [
-                        'encoding' => 'UTF-8',
-                        'min' => 3,
-                        'max' => 200,
-                        'messages' => [
-                            Validator\StringLength::TOO_SHORT => 'O título deve ter pelo menos 3 caracteres.',
-                            Validator\StringLength::TOO_LONG => 'O título não pode ter mais de 200 caracteres.',
-                        ],
-                    ],
-                ],
-            ],
-        ]);
-
-        // Validação para a descrição
-        $inputFilter->add([
-            'name' => 'description',
-            'required' => false,
-            'filters' => [
-                ['name' => Filter\StripTags::class],
-                ['name' => Filter\StringTrim::class],
-            ],
-            'validators' => [
-                [
-                    'name' => Validator\StringLength::class,
-                    'options' => [
-                        'encoding' => 'UTF-8',
-                        'max' => 2000,
-                        'messages' => [
-                            Validator\StringLength::TOO_LONG => 'A descrição não pode ter mais de 2000 caracteres.',
-                        ],
-                    ],
-                ],
-            ],
-        ]);
-
-        // Validação para o status
-        $inputFilter->add([
-            'name' => 'status',
-            'required' => true,
-            'filters' => [
-                ['name' => Filter\StringTrim::class],
-            ],
-            'validators' => [
-                [
-                    'name' => Validator\InArray::class,
-                    'options' => [
-                        'haystack' => Task::getValidStatuses(),
-                        'messages' => [
-                            Validator\InArray::NOT_IN_ARRAY => 'Status inválido.',
-                        ],
-                    ],
-                ],
-            ],
-        ]);
-
-        // Validação para a prioridade
-        $inputFilter->add([
-            'name' => 'priority',
-            'required' => true,
-            'filters' => [
-                ['name' => Filter\StringTrim::class],
-            ],
-            'validators' => [
-                [
-                    'name' => Validator\InArray::class,
-                    'options' => [
-                        'haystack' => Task::getValidPriorities(),
-                        'messages' => [
-                            Validator\InArray::NOT_IN_ARRAY => 'Prioridade inválida.',
-                        ],
-                    ],
-                ],
-            ],
-        ]);
-
-        // Validação para a data de vencimento
-        $inputFilter->add([
-            'name' => 'due_date',
-            'required' => false,
-            'filters' => [
-                ['name' => Filter\StringTrim::class],
-            ],
-            'validators' => [
-                [
-                    'name' => Validator\Date::class,
-                    'options' => [
-                        'format' => ['Y-m-d\TH:i', 'Y-m-d H:i:s', 'Y-m-d H:i'],
-                        'messages' => [
-                            Validator\Date::INVALID_DATE => 'Formato de data inválido.',
-                        ],
-                    ],
-                ],
-            ],
-        ]);
-
-        // Validação para category_id
-        $inputFilter->add([
-            'name' => 'category_id',
-            'required' => false,
-            'filters' => [
-                ['name' => Filter\ToInt::class],
-            ],
-            'validators' => [
-                [
-                    'name' => Validator\Digits::class,
-                    'options' => [
-                        'messages' => [
-                            Validator\Digits::NOT_DIGITS => 'ID da categoria deve ser numérico.',
-                        ],
-                    ],
-                ],
-            ],
-        ]);
-
-        return $inputFilter;
-    }
-
-    /**
-     * Set input filter
-     */
     public function setInputFilter(InputFilterInterface $inputFilter)
     {
         $this->inputFilter = $inputFilter;
         return $this;
     }
 
-    /**
-     * Get input filter
-     */
     public function getInputFilter()
     {
+        if (!$this->inputFilter) {
+            $inputFilter = new InputFilter();
+
+            // Validação do título
+            $inputFilter->add([
+                'name' => 'title',
+                'required' => true,
+                'filters' => [
+                    ['name' => 'StringTrim'],
+                    ['name' => 'StripTags'],
+                ],
+                'validators' => [
+                    [
+                        'name' => NotEmpty::class,
+                        'options' => [
+                            'messages' => [
+                                NotEmpty::IS_EMPTY => 'O título da tarefa é obrigatório.',
+                            ],
+                        ],
+                    ],
+                    [
+                        'name' => StringLength::class,
+                        'options' => [
+                            'encoding' => 'UTF-8',
+                            'min' => 3,
+                            'max' => 200,
+                            'messages' => [
+                                StringLength::TOO_SHORT => 'O título deve ter pelo menos %min% caracteres.',
+                                StringLength::TOO_LONG => 'O título não pode ter mais de %max% caracteres.',
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
+
+            // Validação da descrição
+            $inputFilter->add([
+                'name' => 'description',
+                'required' => false,
+                'filters' => [
+                    ['name' => 'StringTrim'],
+                    ['name' => 'StripTags'],
+                ],
+                'validators' => [
+                    [
+                        'name' => StringLength::class,
+                        'options' => [
+                            'encoding' => 'UTF-8',
+                            'max' => 1000,
+                            'messages' => [
+                                StringLength::TOO_LONG => 'A descrição não pode ter mais de %max% caracteres.',
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
+
+            // Validação do status
+            $inputFilter->add([
+                'name' => 'status',
+                'required' => true,
+                'validators' => [
+                    [
+                        'name' => InArray::class,
+                        'options' => [
+                            'haystack' => Task::getValidStatuses(),
+                            'messages' => [
+                                InArray::NOT_IN_ARRAY => 'Status selecionado é inválido.',
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
+
+            // Validação da prioridade
+            $inputFilter->add([
+                'name' => 'priority',
+                'required' => true,
+                'validators' => [
+                    [
+                        'name' => InArray::class,
+                        'options' => [
+                            'haystack' => Task::getValidPriorities(),
+                            'messages' => [
+                                InArray::NOT_IN_ARRAY => 'Prioridade selecionada é inválida.',
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
+
+            // Validação da data de vencimento
+            $inputFilter->add([
+                'name' => 'due_date',
+                'required' => false,
+                'validators' => [
+                    [
+                        'name' => Date::class,
+                        'options' => [
+                            'format' => 'Y-m-d\TH:i',
+                            'messages' => [
+                                Date::INVALID_DATE => 'Formato de data inválido.',
+                                Date::FALSEFORMAT => 'A data deve estar no formato correto.',
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
+
+            // Validação da categoria
+            $inputFilter->add([
+                'name' => 'category_id',
+                'required' => false,
+                'filters' => [
+                    ['name' => 'ToInt'],
+                ],
+            ]);
+
+            $this->inputFilter = $inputFilter;
+        }
+
         return $this->inputFilter;
-    }
-
-    /**
-     * Definir opções de categoria dinamicamente
-     */
-    public function setCategoryOptions(array $categories)
-    {
-        $options = ['' => 'Selecione uma categoria (opcional)'];
-        foreach ($categories as $id => $name) {
-            $options[$id] = $name;
-        }
-        
-        $this->get('category_id')->setValueOptions($options);
-        return $this;
-    }
-
-    /**
-     * Validar usando a classe Task também
-     */
-    public function isValid()
-    {
-        $isFormValid = parent::isValid();
-        
-        if (!$isFormValid) {
-            return false;
-        }
-
-        // Validação adicional usando a classe Task
-        $task = new Task();
-        $task->exchangeArray($this->getData());
-        
-        $taskErrors = $task->validate();
-        if (!empty($taskErrors)) {
-            foreach ($taskErrors as $field => $message) {
-                $this->get($field)->setMessages([$message]);
-            }
-            return false;
-        }
-
-        return true;
     }
 }
