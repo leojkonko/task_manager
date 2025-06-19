@@ -65,34 +65,22 @@ class Task
     public function exchangeArray(array $data)
     {
         $this->id = !empty($data['id']) ? (int)$data['id'] : null;
-        
+
         // Validar e definir título
-        if (isset($data['title'])) {
-            $this->setTitle($data['title']);
-        }
-        
+        $this->setTitle($data['title'] ?? '');
+
         // Definir descrição
         $this->description = !empty($data['description']) ? trim($data['description']) : null;
-        
+
         // Validar e definir status
-        if (isset($data['status'])) {
-            $this->setStatus($data['status']);
-        } else {
-            $this->status = self::STATUS_PENDING;
-        }
-        
+        $this->setStatus($data['status'] ?? self::STATUS_PENDING);
+
         // Validar e definir prioridade
-        if (isset($data['priority'])) {
-            $this->setPriority($data['priority']);
-        } else {
-            $this->priority = self::PRIORITY_MEDIUM;
-        }
-        
+        $this->setPriority($data['priority'] ?? self::PRIORITY_MEDIUM);
+
         // Validar e definir data de vencimento
-        if (isset($data['due_date'])) {
-            $this->setDueDate($data['due_date']);
-        }
-        
+        $this->setDueDate($data['due_date'] ?? null);
+
         $this->completed_at = !empty($data['completed_at']) ? $data['completed_at'] : null;
         $this->user_id = !empty($data['user_id']) ? (int)$data['user_id'] : null;
         $this->category_id = !empty($data['category_id']) ? (int)$data['category_id'] : null;
@@ -106,19 +94,19 @@ class Task
     public function setTitle($title)
     {
         $title = trim($title);
-        
+
         if (empty($title)) {
             throw new InvalidArgumentException('O título da tarefa não pode estar vazio.');
         }
-        
+
         if (strlen($title) > 200) {
             throw new InvalidArgumentException('O título da tarefa não pode ter mais de 200 caracteres.');
         }
-        
+
         if (strlen($title) < 3) {
             throw new InvalidArgumentException('O título da tarefa deve ter pelo menos 3 caracteres.');
         }
-        
+
         $this->title = $title;
     }
 
@@ -134,9 +122,9 @@ class Task
                 implode(', ', self::getValidStatuses())
             ));
         }
-        
+
         $this->status = $status;
-        
+
         // Automaticamente definir completed_at quando status for completed
         if ($status === self::STATUS_COMPLETED && !$this->completed_at) {
             $this->completed_at = date('Y-m-d H:i:s');
@@ -157,7 +145,7 @@ class Task
                 implode(', ', self::getValidPriorities())
             ));
         }
-        
+
         $this->priority = $priority;
     }
 
@@ -170,12 +158,12 @@ class Task
             $this->due_date = null;
             return;
         }
-        
+
         // Validar formato de data
         if (!$this->isValidDateTime($dueDate)) {
             throw new InvalidArgumentException('Data de vencimento deve estar em um formato válido.');
         }
-        
+
         $this->due_date = $dueDate;
     }
 
@@ -187,15 +175,15 @@ class Task
         if (DateTime::createFromFormat('Y-m-d H:i:s', $dateTime) !== false) {
             return true;
         }
-        
+
         if (DateTime::createFromFormat('Y-m-d\TH:i', $dateTime) !== false) {
             return true;
         }
-        
+
         if (DateTime::createFromFormat('Y-m-d', $dateTime) !== false) {
             return true;
         }
-        
+
         return false;
     }
 
@@ -205,19 +193,19 @@ class Task
     public function validate()
     {
         $errors = [];
-        
+
         if (empty($this->title)) {
             $errors[] = 'O título da tarefa é obrigatório.';
         }
-        
+
         if (empty($this->user_id)) {
             $errors[] = 'O usuário da tarefa é obrigatório.';
         }
-        
+
         if (!empty($errors)) {
             throw new DomainException('Dados da tarefa são inválidos: ' . implode(' ', $errors));
         }
-        
+
         return true;
     }
 
@@ -246,7 +234,7 @@ class Task
             self::STATUS_COMPLETED => 'Concluída',
             self::STATUS_CANCELLED => 'Cancelada'
         ];
-        
+
         return isset($labels[$this->status]) ? $labels[$this->status] : 'Desconhecido';
     }
 
@@ -258,7 +246,7 @@ class Task
             self::PRIORITY_HIGH => 'Alta',
             self::PRIORITY_URGENT => 'Urgente'
         ];
-        
+
         return isset($labels[$this->priority]) ? $labels[$this->priority] : 'Média';
     }
 
@@ -270,7 +258,7 @@ class Task
             self::PRIORITY_HIGH => 'text-warning',
             self::PRIORITY_URGENT => 'text-danger'
         ];
-        
+
         return isset($classes[$this->priority]) ? $classes[$this->priority] : 'text-info';
     }
 
@@ -279,7 +267,7 @@ class Task
         if (!$this->due_date || $this->status === self::STATUS_COMPLETED) {
             return false;
         }
-        
+
         return strtotime($this->due_date) < time();
     }
 
@@ -315,11 +303,11 @@ class Task
         if (!$this->due_date) {
             return null;
         }
-        
+
         $now = new DateTime();
         $dueDate = new DateTime($this->due_date);
         $interval = $now->diff($dueDate);
-        
+
         return $interval->invert ? -$interval->days : $interval->days;
     }
 
@@ -337,13 +325,5 @@ class Task
     public function markAsInProgress()
     {
         $this->setStatus(self::STATUS_IN_PROGRESS);
-    }
-
-    /**
-     * Reiniciar tarefa para status pendente
-     */
-    public function markAsPending()
-    {
-        $this->setStatus(self::STATUS_PENDING);
     }
 }

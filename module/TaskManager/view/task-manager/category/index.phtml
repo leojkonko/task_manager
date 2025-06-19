@@ -29,12 +29,12 @@ $this->headTitle($title);
                 <?php foreach ($categories as $category): ?>
                     <div class="col-md-4 mb-4">
                         <div class="card h-100">
-                            <div class="card-header d-flex justify-content-between align-items-center" 
-                                 style="background-color: <?= $this->escapeHtml($category->color) ?>; color: white;">
+                            <div class="card-header d-flex justify-content-between align-items-center"
+                                style="background-color: <?= $this->escapeHtml($category->color) ?>; color: white;">
                                 <h5 class="mb-0"><?= $this->escapeHtml($category->name) ?></h5>
                                 <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" 
-                                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <div class="dropdown-menu">
@@ -91,8 +91,8 @@ $this->headTitle($title);
                                             <tr>
                                                 <td>
                                                     <div class="d-flex align-items-center">
-                                                        <div class="color-indicator mr-2" 
-                                                             style="width: 20px; height: 20px; background-color: <?= $this->escapeHtml($category->color) ?>; border-radius: 3px;"></div>
+                                                        <div class="color-indicator mr-2"
+                                                            style="width: 20px; height: 20px; background-color: <?= $this->escapeHtml($category->color) ?>; border-radius: 3px;"></div>
                                                         <strong><?= $this->escapeHtml($category->name) ?></strong>
                                                     </div>
                                                 </td>
@@ -111,16 +111,16 @@ $this->headTitle($title);
                                                 <td><?= date('d/m/Y H:i', strtotime($category->created_at)) ?></td>
                                                 <td>
                                                     <div class="btn-group" role="group">
-                                                        <a href="<?= $this->url('category', ['action' => 'view', 'id' => $category->id]) ?>" 
-                                                           class="btn btn-sm btn-outline-info" title="Visualizar">
+                                                        <a href="<?= $this->url('category', ['action' => 'view', 'id' => $category->id]) ?>"
+                                                            class="btn btn-sm btn-outline-info" title="Visualizar">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
-                                                        <a href="<?= $this->url('category', ['action' => 'edit', 'id' => $category->id]) ?>" 
-                                                           class="btn btn-sm btn-outline-primary" title="Editar">
+                                                        <a href="<?= $this->url('category', ['action' => 'edit', 'id' => $category->id]) ?>"
+                                                            class="btn btn-sm btn-outline-primary" title="Editar">
                                                             <i class="fas fa-edit"></i>
                                                         </a>
-                                                        <a href="<?= $this->url('category', ['action' => 'delete', 'id' => $category->id]) ?>" 
-                                                           class="btn btn-sm btn-outline-danger" title="Excluir">
+                                                        <a href="<?= $this->url('category', ['action' => 'delete', 'id' => $category->id]) ?>"
+                                                            class="btn btn-sm btn-outline-danger" title="Excluir">
                                                             <i class="fas fa-trash"></i>
                                                         </a>
                                                     </div>

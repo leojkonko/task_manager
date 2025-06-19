@@ -1,138 +1,141 @@
 <?php
+
 /**
  * @var Laminas\View\Renderer\PhpRenderer $this
  */
 ?>
 <?= $this->doctype() ?>
 <html lang="pt-BR">
-    <head>
-        <meta charset="utf-8">
-        <?= $this->headTitle('Sistema de Gerenciamento de Tarefas')->setSeparator(' - ')->setAutoEscape(false) ?>
 
-        <?= $this->headMeta()
-            ->appendName('viewport', 'width=device-width, initial-scale=1.0')
-            ->appendHttpEquiv('X-UA-Compatible', 'IE=edge')
-        ?>
+<head>
+    <meta charset="utf-8">
+    <?= $this->headTitle('Sistema de Gerenciamento de Tarefas')->setSeparator(' - ')->setAutoEscape(false) ?>
 
-        <!-- Styles -->
-        <?= $this->headLink([
-                'rel' => 'shortcut icon',
-                'type' => 'image/vnd.microsoft.icon',
-                'href' => $this->basePath() . '/img/favicon.ico'
-            ])
-            ->prependStylesheet($this->basePath('css/custom.css'))
-            ->prependStylesheet($this->basePath('css/style.css'))
-            ->prependStylesheet($this->basePath('css/bootstrap.min.css')) ?>
+    <?= $this->headMeta()
+        ->appendName('viewport', 'width=device-width, initial-scale=1.0')
+        ->appendHttpEquiv('X-UA-Compatible', 'IE=edge')
+    ?>
 
-        <!-- Font Awesome -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Styles -->
+    <?= $this->headLink([
+        'rel' => 'shortcut icon',
+        'type' => 'image/vnd.microsoft.icon',
+        'href' => $this->basePath() . '/img/favicon.ico'
+    ])
+        ->prependStylesheet($this->basePath('css/custom.css'))
+        ->prependStylesheet($this->basePath('css/style.css'))
+        ->prependStylesheet($this->basePath('css/bootstrap.min.css')) ?>
 
-        <!-- Scripts -->
-        <?= $this->headScript() ?>
-    </head>
-    <body>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4" role="navigation">
-            <div class="container">
-                <a class="navbar-brand" href="<?= $this->url('task') ?>">
-                    <i class="fas fa-tasks"></i>
-                    <span class="navbar-text text-light">TaskManager</span>
-                </a>
-                <button
-                    class="navbar-toggler"
-                    type="button"
-                    data-toggle="collapse"
-                    data-target="#navbarSupportedContent"
-                    aria-controls="navbarSupportedContent"
-                    aria-expanded="false"
-                    aria-label="Toggle navigation"
-                >
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav mr-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('task') ?>">
-                                <i class="fas fa-list"></i> Tarefas
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Scripts -->
+    <?= $this->headScript() ?>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4" role="navigation">
+        <div class="container">
+            <a class="navbar-brand" href="<?= $this->url('task') ?>">
+                <i class="fas fa-tasks"></i>
+                <span class="navbar-text text-light">TaskManager</span>
+            </a>
+            <button
+                class="navbar-toggler"
+                type="button"
+                data-toggle="collapse"
+                data-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent"
+                aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?= $this->url('task') ?>">
+                            <i class="fas fa-list"></i> Tarefas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?= $this->url('category') ?>">
+                            <i class="fas fa-tags"></i> Categorias
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-plus"></i> Novo
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="<?= $this->url('task', ['action' => 'add']) ?>">
+                                <i class="fas fa-plus-circle"></i> Nova Tarefa
                             </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('category') ?>">
-                                <i class="fas fa-tags"></i> Categorias
+                            <a class="dropdown-item" href="<?= $this->url('category', ['action' => 'add']) ?>">
+                                <i class="fas fa-tag"></i> Nova Categoria
                             </a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav ml-auto">
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-plus"></i> Novo
-                            </a>
-                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item" href="<?= $this->url('task', ['action' => 'add']) ?>">
-                                    <i class="fas fa-plus-circle"></i> Nova Tarefa
-                                </a>
-                                <a class="dropdown-item" href="<?= $this->url('category', ['action' => 'add']) ?>">
-                                    <i class="fas fa-tag"></i> Nova Categoria
-                                </a>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" title="Usuário">
-                                <i class="fas fa-user"></i> Admin
-                            </a>
-                        </li>
-                    </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" title="Usuário">
+                            <i class="fas fa-user"></i> Admin
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Mensagens Flash -->
+        <?php if ($this->flashMessenger()->hasMessages()): ?>
+            <?php foreach ($this->flashMessenger()->getMessages() as $message): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <?= $this->escapeHtml($message) ?>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+
+        <?php if ($this->flashMessenger()->hasErrorMessages()): ?>
+            <?php foreach ($this->flashMessenger()->getErrorMessages() as $message): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <?= $this->escapeHtml($message) ?>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+
+        <?= $this->content ?>
+
+        <hr class="mt-5">
+        <footer class="py-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="text-muted">
+                        &copy; <?= date('Y') ?> Sistema de Gerenciamento de Tarefas
+                    </p>
+                </div>
+                <div class="col-md-6 text-right">
+                    <p class="text-muted">
+                        Desenvolvido com <i class="fas fa-heart text-danger"></i> usando Laminas Framework
+                    </p>
                 </div>
             </div>
-        </nav>
-        
-        <div class="container">
-            <!-- Mensagens Flash -->
-            <?php if ($this->flashMessenger()->hasMessages()): ?>
-                <?php foreach ($this->flashMessenger()->getMessages() as $message): ?>
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <?= $this->escapeHtml($message) ?>
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-            
-            <?php if ($this->flashMessenger()->hasErrorMessages()): ?>
-                <?php foreach ($this->flashMessenger()->getErrorMessages() as $message): ?>
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <?= $this->escapeHtml($message) ?>
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
+        </footer>
+    </div>
 
-            <?= $this->content ?>
-            
-            <hr class="mt-5">
-            <footer class="py-3">
-                <div class="row">
-                    <div class="col-md-6">
-                        <p class="text-muted">
-                            &copy; <?= date('Y') ?> Sistema de Gerenciamento de Tarefas
-                        </p>
-                    </div>
-                    <div class="col-md-6 text-right">
-                        <p class="text-muted">
-                            Desenvolvido com <i class="fas fa-heart text-danger"></i> usando Laminas Framework
-                        </p>
-                    </div>
-                </div>
-            </footer>
-        </div>
-        
-        <!-- jQuery -->
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <!-- Bootstrap JS -->
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-        
-        <?= $this->inlineScript() ?>
-    </body>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <?= $this->inlineScript() ?>
+</body>
+
 </html>

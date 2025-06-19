@@ -18,7 +18,7 @@ class Module implements ConfigProviderInterface
     {
         return [
             'factories' => [
-                Model\TaskTable::class => function($container) {
+                Model\TaskTable::class => function ($container) {
                     $tableGateway = $container->get(Model\TaskTableGateway::class);
                     return new Model\TaskTable($tableGateway);
                 },
@@ -28,7 +28,7 @@ class Module implements ConfigProviderInterface
                     $resultSetPrototype->setArrayObjectPrototype(new Model\Task());
                     return new TableGateway('tasks', $dbAdapter, null, $resultSetPrototype);
                 },
-                Model\CategoryTable::class => function($container) {
+                Model\CategoryTable::class => function ($container) {
                     $tableGateway = $container->get(Model\CategoryTableGateway::class);
                     return new Model\CategoryTable($tableGateway);
                 },
@@ -38,7 +38,7 @@ class Module implements ConfigProviderInterface
                     $resultSetPrototype->setArrayObjectPrototype(new Model\Category());
                     return new TableGateway('task_categories', $dbAdapter, null, $resultSetPrototype);
                 },
-                Model\UserTable::class => function($container) {
+                Model\UserTable::class => function ($container) {
                     $tableGateway = $container->get(Model\UserTableGateway::class);
                     return new Model\UserTable($tableGateway);
                 },
@@ -56,13 +56,13 @@ class Module implements ConfigProviderInterface
     {
         return [
             'factories' => [
-                Controller\TaskController::class => function($container) {
+                Controller\TaskController::class => function ($container) {
                     return new Controller\TaskController(
                         $container->get(Model\TaskTable::class),
                         $container->get(Model\CategoryTable::class)
                     );
                 },
-                Controller\CategoryController::class => function($container) {
+                Controller\CategoryController::class => function ($container) {
                     return new Controller\CategoryController(
                         $container->get(Model\CategoryTable::class)
                     );

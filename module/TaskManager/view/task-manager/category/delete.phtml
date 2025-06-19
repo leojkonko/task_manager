@@ -12,12 +12,12 @@ $this->headTitle($title);
                 <div class="alert alert-warning">
                     <strong>Atenção!</strong> Esta ação não pode ser desfeita. Todas as tarefas associadas a esta categoria ficarão sem categoria.
                 </div>
-                
+
                 <p>Tem certeza que deseja excluir a seguinte categoria?</p>
-                
+
                 <div class="card mb-3">
-                    <div class="card-header d-flex align-items-center" 
-                         style="background-color: <?= $this->escapeHtml($category->color) ?>; color: white;">
+                    <div class="card-header d-flex align-items-center"
+                        style="background-color: <?= $this->escapeHtml($category->color) ?>; color: white;">
                         <h5 class="mb-0"><?= $this->escapeHtml($category->name) ?></h5>
                     </div>
                     <div class="card-body">

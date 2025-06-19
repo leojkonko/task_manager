@@ -1,178 +1,191 @@
 <?php
-$title = 'Detalhes da Tarefa';
+$title = 'Visualizar Tarefa: ' . $task['title'];
 $this->headTitle($title);
 ?>
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0"><?= $this->escapeHtml($task->title) ?></h4>
-                <div>
-                    <a href="<?= $this->url('task', ['action' => 'edit', 'id' => $task->id]) ?>" class="btn btn-primary btn-sm">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
-                    <a href="<?= $this->url('task') ?>" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i> Voltar
-                    </a>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <strong>Status:</strong>
-                    </div>
-                    <div class="col-md-9">
-                        <span class="badge badge-<?= $task->status === 'completed' ? 'success' : ($task->status === 'in_progress' ? 'info' : ($task->status === 'cancelled' ? 'secondary' : 'warning')) ?> badge-lg">
-                            <?= $this->escapeHtml($task->getStatusLabel()) ?>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Detalhes da Tarefa</h3>
+                    <div>
+                        <span class="badge <?= $this->getStatusBadgeClass($task['status']) ?> me-2">
+                            <?= $this->escapeHtml($availableStatuses[$task['status']]) ?>
+                        </span>
+                        <span class="badge <?= $this->getPriorityBadgeClass($task['priority']) ?>">
+                            <?= $this->escapeHtml($availablePriorities[$task['priority']]) ?>
                         </span>
                     </div>
                 </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <strong>Prioridade:</strong>
+                <div class="card-body">
+                    <h4 class="mb-3"><?= $this->escapeHtml($task['title']) ?></h4>
+                    
+                    <?php if ($task['description']): ?>
+                        <div class="mb-3">
+                            <h6>Descrição:</h6>
+                            <p class="text-muted"><?= nl2br($this->escapeHtml($task['description'])) ?></p>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6>Status:</h6>
+                                <span class="badge <?= $this->getStatusBadgeClass($task['status']) ?>">
+                                    <?= $this->escapeHtml($availableStatuses[$task['status']]) ?>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6>Prioridade:</h6>
+                                <span class="badge <?= $this->getPriorityBadgeClass($task['priority']) ?>">
+                                    <?= $this->escapeHtml($availablePriorities[$task['priority']]) ?>
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-9">
-                        <span class="<?= $task->getPriorityClass() ?> font-weight-bold">
-                            <i class="fas fa-flag"></i> <?= $this->escapeHtml($task->getPriorityLabel()) ?>
-                        </span>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6>Data de Criação:</h6>
+                                <p class="text-muted"><?= date('d/m/Y H:i', strtotime($task['created_at'])) ?></p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6>Última Atualização:</h6>
+                                <p class="text-muted"><?= date('d/m/Y H:i', strtotime($task['updated_at'])) ?></p>
+                            </div>
+                        </div>
                     </div>
+                    
+                    <?php if ($task['due_date']): ?>
+                        <div class="mb-3">
+                            <h6>Data de Vencimento:</h6>
+                            <p class="text-muted <?= $task['is_overdue'] ? 'text-danger' : '' ?>">
+                                <i class="fas fa-calendar"></i> 
+                                <?= date('d/m/Y H:i', strtotime($task['due_date'])) ?>
+                                <?php if ($task['is_overdue']): ?>
+                                    <span class="badge bg-danger ms-2">Vencida</span>
+                                <?php endif; ?>
+                            </p>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($task['completed_at']): ?>
+                        <div class="mb-3">
+                            <h6>Data de Conclusão:</h6>
+                            <p class="text-success">
+                                <i class="fas fa-check-circle"></i> 
+                                <?= date('d/m/Y H:i', strtotime($task['completed_at'])) ?>
+                            </p>
+                        </div>
+                    <?php endif; ?>
                 </div>
-
-                <?php if ($task->due_date): ?>
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <strong>Vencimento:</strong>
-                    </div>
-                    <div class="col-md-9">
-                        <?= date('d/m/Y H:i', strtotime($task->due_date)) ?>
-                        <?php if ($task->isOverdue()): ?>
-                            <span class="badge badge-danger ml-2">
-                                <i class="fas fa-exclamation-triangle"></i> Atrasada
-                            </span>
-                        <?php endif; ?>
-                        
-                        <?php 
-                        $daysUntilDue = $task->getDaysUntilDue();
-                        if ($daysUntilDue !== null && !$task->isOverdue() && $task->status !== 'completed'): 
-                        ?>
-                            <small class="text-muted ml-2">
-                                (<?= $daysUntilDue ?> <?= $daysUntilDue == 1 ? 'dia' : 'dias' ?> restantes)
-                            </small>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <strong>Criada em:</strong>
-                    </div>
-                    <div class="col-md-9">
-                        <?= date('d/m/Y H:i', strtotime($task->created_at)) ?>
-                    </div>
-                </div>
-
-                <?php if ($task->updated_at !== $task->created_at): ?>
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <strong>Atualizada em:</strong>
-                    </div>
-                    <div class="col-md-9">
-                        <?= date('d/m/Y H:i', strtotime($task->updated_at)) ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <?php if ($task->completed_at): ?>
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <strong>Concluída em:</strong>
-                    </div>
-                    <div class="col-md-9">
-                        <span class="text-success">
-                            <i class="fas fa-check-circle"></i> <?= date('d/m/Y H:i', strtotime($task->completed_at)) ?>
-                        </span>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <?php if ($task->description): ?>
-                <hr>
-                <div class="row">
-                    <div class="col-md-12">
-                        <h5>Descrição</h5>
-                        <div class="bg-light p-3 rounded">
-                            <?= nl2br($this->escapeHtml($task->description)) ?>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="<?= $this->url('task-manager') ?>" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                        <div>
+                            <a href="<?= $this->url('task-manager/edit', ['id' => $task['id']]) ?>" 
+                               class="btn btn-outline-primary me-2">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            
+                            <?php if (!$task['is_completed']): ?>
+                                <button type="button" class="btn btn-success me-2" 
+                                        onclick="completeTask(<?= $task['id'] ?>)">
+                                    <i class="fas fa-check"></i> Marcar como Concluída
+                                </button>
+                            <?php endif; ?>
+                            
+                            <button type="button" class="btn btn-info me-2" 
+                                    onclick="duplicateTask(<?= $task['id'] ?>)">
+                                <i class="fas fa-copy"></i> Duplicar
+                            </button>
+                            
+                            <button type="button" class="btn btn-danger" 
+                                    onclick="deleteTask(<?= $task['id'] ?>)">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
                         </div>
                     </div>
                 </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Ações Rápidas</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <?php if ($task->status !== 'completed'): ?>
-                        <a href="<?= $this->url('task', ['action' => 'toggle-status', 'id' => $task->id]) ?>" 
-                           class="btn btn-success">
-                            <i class="fas fa-check"></i> Marcar como Concluída
-                        </a>
-                    <?php else: ?>
-                        <a href="<?= $this->url('task', ['action' => 'toggle-status', 'id' => $task->id]) ?>" 
-                           class="btn btn-warning">
-                            <i class="fas fa-undo"></i> Marcar como Pendente
-                        </a>
-                    <?php endif; ?>
-                    
-                    <a href="<?= $this->url('task', ['action' => 'edit', 'id' => $task->id]) ?>" 
-                       class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Editar Tarefa
-                    </a>
-                    
-                    <hr>
-                    
-                    <a href="<?= $this->url('task', ['action' => 'delete', 'id' => $task->id]) ?>" 
-                       class="btn btn-danger"
-                       onclick="return confirm('Tem certeza que deseja excluir esta tarefa?')">
-                        <i class="fas fa-trash"></i> Excluir Tarefa
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <?php if ($task->isOverdue() && $task->status !== 'completed'): ?>
-        <div class="card mt-3 border-danger">
-            <div class="card-header bg-danger text-white">
-                <h6 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Tarefa Atrasada</h6>
-            </div>
-            <div class="card-body">
-                <p class="text-danger mb-0">
-                    Esta tarefa está atrasada há <?= abs($task->getDaysUntilDue()) ?> 
-                    <?= abs($task->getDaysUntilDue()) == 1 ? 'dia' : 'dias' ?>.
-                </p>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <div class="card mt-3">
-            <div class="card-header">
-                <h6 class="mb-0">Informações</h6>
-            </div>
-            <div class="card-body">
-                <ul class="list-unstyled mb-0">
-                    <li><small class="text-muted">ID: <?= $task->id ?></small></li>
-                    <li><small class="text-muted">Usuário: <?= $task->user_id ?></small></li>
-                    <?php if ($task->category_id): ?>
-                        <li><small class="text-muted">Categoria: <?= $task->category_id ?></small></li>
-                    <?php endif; ?>
-                </ul>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function completeTask(id) {
+    if (confirm('Marcar esta tarefa como concluída?')) {
+        fetch(`/tasks/complete/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao completar tarefa');
+        });
+    }
+}
+
+function duplicateTask(id) {
+    if (confirm('Duplicar esta tarefa?')) {
+        fetch(`/tasks/duplicate/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Tarefa duplicada com sucesso!');
+                window.location.href = '/tasks';
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao duplicar tarefa');
+        });
+    }
+}
+
+function deleteTask(id) {
+    if (confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
+        fetch(`/tasks/delete/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Tarefa excluída com sucesso!');
+                window.location.href = '/tasks';
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao excluir tarefa');
+        });
+    }
+}
+</script>

@@ -20,9 +20,9 @@ class CategoryController extends AbstractActionController
     {
         // Por enquanto, vamos usar user_id = 1 (admin) até implementarmos autenticação
         $userId = 1;
-        
+
         $categories = $this->table->fetchAll($userId);
-        
+
         return new ViewModel([
             'categories' => $categories,
         ]);
@@ -31,7 +31,7 @@ class CategoryController extends AbstractActionController
     public function addAction()
     {
         $userId = 1; // Usuário fixo por enquanto
-        
+
         $form = new \TaskManager\Form\CategoryForm();
         $form->get('submit')->setValue('Adicionar');
 
@@ -51,7 +51,7 @@ class CategoryController extends AbstractActionController
         $category->exchangeArray($form->getData());
         $category->user_id = $userId;
         $this->table->saveCategory($category);
-        
+
         $this->flashMessenger()->addSuccessMessage('Categoria adicionada com sucesso!');
         return $this->redirect()->toRoute('category');
     }
@@ -127,7 +127,7 @@ class CategoryController extends AbstractActionController
     public function viewAction()
     {
         $id = (int) $this->params()->fromRoute('id', 0);
-        
+
         if (0 === $id) {
             return $this->redirect()->toRoute('category');
         }

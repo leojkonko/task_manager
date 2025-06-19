@@ -1,309 +1,466 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TaskManager\Controller;
 
-use TaskManager\Model\TaskTable;
-use TaskManager\Model\CategoryTable;
-use TaskManager\Model\Task;
+use TaskManager\Service\TaskService;
+use TaskManager\Entity\Task;
 use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
-use Exception;
-use InvalidArgumentException;
-use DomainException;
+use Laminas\Http\Request;
 
+/**
+ * Controller para gerenciar as operações CRUD das tarefas
+ */
 class TaskController extends AbstractActionController
 {
-    private $table;
-    private $categoryTable;
+    private TaskService $taskService;
 
-    public function __construct(TaskTable $table, CategoryTable $categoryTable)
+    public function __construct(TaskService $taskService)
     {
-        $this->table = $table;
-        $this->categoryTable = $categoryTable;
-    }
-
-    public function indexAction()
-    {
-        // Por enquanto, vamos usar user_id = 1 (admin) até implementarmos autenticação
-        $userId = 1;
-        
-        try {
-            $tasks = $this->table->fetchAll($userId);
-            $categories = $this->categoryTable->fetchAll($userId);
-            
-            return new ViewModel([
-                'tasks' => $tasks,
-                'categories' => $categories,
-            ]);
-        } catch (Exception $e) {
-            $this->flashMessenger()->addErrorMessage('Erro ao carregar tarefas: ' . $e->getMessage());
-            return new ViewModel([
-                'tasks' => [],
-                'categories' => [],
-            ]);
-        }
-    }
-
-    public function addAction()
-    {
-        $userId = 1; // Usuário fixo por enquanto
-        
-        $form = new \TaskManager\Form\TaskForm();
-        $form->get('submit')->setValue('Adicionar');
-
-        try {
-            // Buscar categorias para o select
-            $categories = $this->categoryTable->getCategoriesForSelect($userId);
-            $form->get('category_id')->setValueOptions(['' => 'Selecione uma categoria'] + $categories);
-        } catch (Exception $e) {
-            $this->flashMessenger()->addErrorMessage('Erro ao carregar categorias.');
-            $categories = [];
-            $form->get('category_id')->setValueOptions(['' => 'Selecione uma categoria']);
-        }
-
-        $request = $this->getRequest();
-
-        if (!$request->isPost()) {
-            return ['form' => $form];
-        }
-
-        $task = new Task();
-        $form->setData($request->getPost());
-
-        if (!$form->isValid()) {
-            return ['form' => $form];
-        }
-
-        try {
-            // Validar dados do formulário
-            $formData = $form->getData();
-            
-            // Aplicar validações do servidor
-            $this->validateTaskData($formData);
-            
-            $task->exchangeArray($formData);
-            $task->user_id = $userId;
-            
-            // Validar o modelo
-            $task->validate();
-            
-            $this->table->saveTask($task);
-            
-            $this->flashMessenger()->addSuccessMessage('Tarefa adicionada com sucesso!');
-            return $this->redirect()->toRoute('task');
-            
-        } catch (InvalidArgumentException $e) {
-            $this->flashMessenger()->addErrorMessage('Dados inválidos: ' . $e->getMessage());
-        } catch (DomainException $e) {
-            $this->flashMessenger()->addErrorMessage('Erro de validação: ' . $e->getMessage());
-        } catch (Exception $e) {
-            $this->flashMessenger()->addErrorMessage('Erro ao salvar tarefa: ' . $e->getMessage());
-        }
-        
-        return ['form' => $form];
-    }
-
-    public function editAction()
-    {
-        $id = (int) $this->params()->fromRoute('id', 0);
-
-        if (0 === $id) {
-            return $this->redirect()->toRoute('task', ['action' => 'add']);
-        }
-
-        try {
-            $task = $this->table->getTask($id);
-        } catch (Exception $e) {
-            $this->flashMessenger()->addErrorMessage('Tarefa não encontrada.');
-            return $this->redirect()->toRoute('task');
-        }
-
-        $userId = 1; // Usuário fixo por enquanto
-        
-        $form = new \TaskManager\Form\TaskForm();
-        $form->bind($task);
-        $form->get('submit')->setAttribute('value', 'Editar');
-
-        try {
-            // Buscar categorias para o select
-            $categories = $this->categoryTable->getCategoriesForSelect($userId);
-            $form->get('category_id')->setValueOptions(['' => 'Selecione uma categoria'] + $categories);
-        } catch (Exception $e) {
-            $this->flashMessenger()->addErrorMessage('Erro ao carregar categorias.');
-        }
-
-        $request = $this->getRequest();
-        $viewData = ['id' => $id, 'form' => $form];
-
-        if (!$request->isPost()) {
-            return $viewData;
-        }
-
-        $form->setData($request->getPost());
-
-        if (!$form->isValid()) {
-            return $viewData;
-        }
-
-        try {
-            // Validar dados do formulário
-            $formData = $form->getData();
-            
-            // Aplicar validações do servidor
-            $this->validateTaskData($formData);
-            
-            // Validar o modelo
-            $task->validate();
-            
-            $this->table->saveTask($task);
-            $this->flashMessenger()->addSuccessMessage('Tarefa atualizada com sucesso!');
-            
-        } catch (InvalidArgumentException $e) {
-            $this->flashMessenger()->addErrorMessage('Dados inválidos: ' . $e->getMessage());
-            return $viewData;
-        } catch (DomainException $e) {
-            $this->flashMessenger()->addErrorMessage('Erro de validação: ' . $e->getMessage());
-            return $viewData;
-        } catch (Exception $e) {
-            $this->flashMessenger()->addErrorMessage('Erro ao atualizar tarefa: ' . $e->getMessage());
-            return $viewData;
-        }
-
-        return $this->redirect()->toRoute('task');
+        $this->taskService = $taskService;
     }
 
     /**
-     * Validar dados da tarefa no servidor
+     * Lista todas as tarefas do usuário
      */
-    private function validateTaskData(array $data)
+    public function indexAction()
     {
-        // Validar título obrigatório
-        if (empty(trim($data['title'] ?? ''))) {
-            throw new InvalidArgumentException('O título da tarefa é obrigatório.');
-        }
-        
-        // Validar comprimento do título
-        $title = trim($data['title']);
-        if (strlen($title) < 3) {
-            throw new InvalidArgumentException('O título deve ter pelo menos 3 caracteres.');
-        }
-        
-        if (strlen($title) > 200) {
-            throw new InvalidArgumentException('O título não pode ter mais de 200 caracteres.');
-        }
-        
-        // Validar status se fornecido
-        if (!empty($data['status']) && !in_array($data['status'], Task::getValidStatuses())) {
-            throw new InvalidArgumentException('Status inválido.');
-        }
-        
-        // Validar prioridade se fornecida
-        if (!empty($data['priority']) && !in_array($data['priority'], Task::getValidPriorities())) {
-            throw new InvalidArgumentException('Prioridade inválida.');
-        }
-        
-        // Validar data de vencimento se fornecida
-        if (!empty($data['due_date'])) {
-            $dueDate = \DateTime::createFromFormat('Y-m-d\TH:i', $data['due_date']);
-            if (!$dueDate) {
-                $dueDate = \DateTime::createFromFormat('Y-m-d H:i:s', $data['due_date']);
-            }
-            if (!$dueDate) {
-                throw new InvalidArgumentException('Formato de data de vencimento inválido.');
-            }
-        }
-        
-        // Validar categoria se fornecida
-        if (!empty($data['category_id'])) {
-            $categoryId = (int)$data['category_id'];
-            try {
-                $this->categoryTable->getCategory($categoryId);
-            } catch (Exception $e) {
-                throw new InvalidArgumentException('Categoria selecionada não existe.');
-            }
-        }
-    }
+        // Por enquanto, vamos usar um usuário fixo para teste
+        // Em uma implementação real, o ID do usuário viria da sessão/autenticação
+        $userId = 1;
 
-    public function deleteAction()
-    {
-        $id = (int) $this->params()->fromRoute('id', 0);
-        if (!$id) {
-            return $this->redirect()->toRoute('task');
-        }
+        $page = (int) $this->params()->fromQuery('page', 1);
+        $limit = (int) $this->params()->fromQuery('limit', 10);
+        
+        $filters = [
+            'status' => $this->params()->fromQuery('status'),
+            'priority' => $this->params()->fromQuery('priority'),
+            'category_id' => $this->params()->fromQuery('category_id'),
+            'search' => $this->params()->fromQuery('search'),
+            'order_by' => $this->params()->fromQuery('order_by', 'created_at'),
+            'order_direction' => $this->params()->fromQuery('order_direction', 'DESC'),
+        ];
 
+        // Remover filtros vazios
+        $filters = array_filter($filters, function($value) {
+            return $value !== null && $value !== '';
+        });
+
+        $result = $this->taskService->getUserTasksWithPagination($userId, $page, $limit, $filters);
+
+        // Se for uma requisição AJAX, retornar JSON
         $request = $this->getRequest();
-        if ($request->isPost()) {
-            $del = $request->getPost('del', 'Não');
-
-            if ($del == 'Sim') {
-                $id = (int) $request->getPost('id');
-                try {
-                    $this->table->deleteTask($id);
-                    $this->flashMessenger()->addSuccessMessage('Tarefa excluída com sucesso!');
-                } catch (Exception $e) {
-                    $this->flashMessenger()->addErrorMessage('Erro ao excluir tarefa: ' . $e->getMessage());
-                }
-            }
-
-            return $this->redirect()->toRoute('task');
+        if ($request instanceof Request && $request->getHeader('X-Requested-With')) {
+            return new JsonModel([
+                'success' => true,
+                'data' => [
+                    'tasks' => array_map(function($task) {
+                        return $task->toArray();
+                    }, $result['tasks']),
+                    'pagination' => [
+                        'total' => $result['total'],
+                        'page' => $result['page'],
+                        'limit' => $result['limit'],
+                        'total_pages' => $result['total_pages'],
+                    ]
+                ]
+            ]);
         }
 
-        try {
-            $task = $this->table->getTask($id);
-            return [
-                'id' => $id,
-                'task' => $task,
-            ];
-        } catch (Exception $e) {
-            $this->flashMessenger()->addErrorMessage('Tarefa não encontrada.');
-            return $this->redirect()->toRoute('task');
-        }
+        // Converter tasks para array para a view
+        $tasks = array_map(function($task) {
+            return $task->toArray();
+        }, $result['tasks']);
+
+        return new ViewModel([
+            'tasks' => $tasks,
+            'pagination' => [
+                'total' => $result['total'],
+                'page' => $result['page'],
+                'limit' => $result['limit'],
+                'total_pages' => $result['total_pages'],
+            ],
+            'filters' => $filters,
+            'availableStatuses' => Task::getAvailableStatuses(),
+            'availablePriorities' => Task::getAvailablePriorities(),
+        ]);
     }
 
-    public function toggleStatusAction()
-    {
-        $id = (int) $this->params()->fromRoute('id', 0);
-        
-        if (!$id) {
-            return $this->redirect()->toRoute('task');
-        }
-
-        try {
-            $task = $this->table->getTask($id);
-            
-            // Alternar status entre pending/in_progress e completed
-            if ($task->status === Task::STATUS_COMPLETED) {
-                $task->markAsPending();
-            } else {
-                $task->markAsCompleted();
-            }
-            
-            $this->table->saveTask($task);
-            $this->flashMessenger()->addSuccessMessage('Status da tarefa atualizado!');
-            
-        } catch (Exception $e) {
-            $this->flashMessenger()->addErrorMessage('Erro ao atualizar status da tarefa: ' . $e->getMessage());
-        }
-
-        return $this->redirect()->toRoute('task');
-    }
-
+    /**
+     * Exibe uma tarefa específica
+     */
     public function viewAction()
     {
         $id = (int) $this->params()->fromRoute('id', 0);
         
-        if (0 === $id) {
-            return $this->redirect()->toRoute('task');
+        if (!$id) {
+            return $this->redirect()->toRoute('task-manager');
+        }
+
+        $task = $this->taskService->getTaskById($id);
+        
+        if (!$task) {
+            $request = $this->getRequest();
+            if ($request instanceof Request && $request->getHeader('X-Requested-With')) {
+                return new JsonModel([
+                    'success' => false,
+                    'message' => 'Tarefa não encontrada'
+                ]);
+            }
+            
+            $this->flashMessenger()->addErrorMessage('Tarefa não encontrada');
+            return $this->redirect()->toRoute('task-manager');
+        }
+
+        $request = $this->getRequest();
+        if ($request instanceof Request && $request->getHeader('X-Requested-With')) {
+            return new JsonModel([
+                'success' => true,
+                'data' => $task->toArray()
+            ]);
+        }
+
+        return new ViewModel([
+            'task' => $task->toArray(),
+            'availableStatuses' => Task::getAvailableStatuses(),
+            'availablePriorities' => Task::getAvailablePriorities(),
+        ]);
+    }
+
+    /**
+     * Formulário para criar nova tarefa
+     */
+    public function createAction()
+    {
+        $request = $this->getRequest();
+        
+        if ($request instanceof Request && $request->isPost()) {
+            $data = $request->getPost()->toArray();
+            $data['user_id'] = 1; // Usuário fixo para teste
+            
+            try {
+                $task = $this->taskService->createTask($data);
+                
+                if ($request->getHeader('X-Requested-With')) {
+                    return new JsonModel([
+                        'success' => true,
+                        'message' => 'Tarefa criada com sucesso',
+                        'data' => $task->toArray()
+                    ]);
+                }
+                
+                $this->flashMessenger()->addSuccessMessage('Tarefa criada com sucesso');
+                return $this->redirect()->toRoute('task-manager/view', ['id' => $task->getId()]);
+                
+            } catch (\InvalidArgumentException $e) {
+                if ($request->getHeader('X-Requested-With')) {
+                    return new JsonModel([
+                        'success' => false,
+                        'message' => $e->getMessage()
+                    ]);
+                }
+                
+                $this->flashMessenger()->addErrorMessage($e->getMessage());
+            } catch (\Exception $e) {
+                if ($request->getHeader('X-Requested-With')) {
+                    return new JsonModel([
+                        'success' => false,
+                        'message' => 'Erro interno do servidor'
+                    ]);
+                }
+                
+                $this->flashMessenger()->addErrorMessage('Erro ao criar tarefa');
+            }
+        }
+
+        return new ViewModel([
+            'availableStatuses' => Task::getAvailableStatuses(),
+            'availablePriorities' => Task::getAvailablePriorities(),
+        ]);
+    }
+
+    /**
+     * Formulário para editar tarefa
+     */
+    public function editAction()
+    {
+        $id = (int) $this->params()->fromRoute('id', 0);
+        
+        if (!$id) {
+            return $this->redirect()->toRoute('task-manager');
+        }
+
+        $task = $this->taskService->getTaskById($id);
+        
+        if (!$task) {
+            $this->flashMessenger()->addErrorMessage('Tarefa não encontrada');
+            return $this->redirect()->toRoute('task-manager');
+        }
+
+        $request = $this->getRequest();
+        
+        if ($request instanceof Request && $request->isPost()) {
+            $data = $request->getPost()->toArray();
+            
+            try {
+                $updatedTask = $this->taskService->updateTask($id, $data);
+                
+                if ($request->getHeader('X-Requested-With')) {
+                    return new JsonModel([
+                        'success' => true,
+                        'message' => 'Tarefa atualizada com sucesso',
+                        'data' => $updatedTask->toArray()
+                    ]);
+                }
+                
+                $this->flashMessenger()->addSuccessMessage('Tarefa atualizada com sucesso');
+                return $this->redirect()->toRoute('task-manager/view', ['id' => $id]);
+                
+            } catch (\InvalidArgumentException $e) {
+                if ($request->getHeader('X-Requested-With')) {
+                    return new JsonModel([
+                        'success' => false,
+                        'message' => $e->getMessage()
+                    ]);
+                }
+                
+                $this->flashMessenger()->addErrorMessage($e->getMessage());
+            } catch (\Exception $e) {
+                if ($request->getHeader('X-Requested-With')) {
+                    return new JsonModel([
+                        'success' => false,
+                        'message' => 'Erro interno do servidor'
+                    ]);
+                }
+                
+                $this->flashMessenger()->addErrorMessage('Erro ao atualizar tarefa');
+            }
+        }
+
+        return new ViewModel([
+            'task' => $task->toArray(),
+            'availableStatuses' => Task::getAvailableStatuses(),
+            'availablePriorities' => Task::getAvailablePriorities(),
+        ]);
+    }
+
+    /**
+     * Exclui uma tarefa
+     */
+    public function deleteAction()
+    {
+        $id = (int) $this->params()->fromRoute('id', 0);
+        
+        if (!$id) {
+            $request = $this->getRequest();
+            if ($request instanceof Request && $request->getHeader('X-Requested-With')) {
+                return new JsonModel([
+                    'success' => false,
+                    'message' => 'ID da tarefa não fornecido'
+                ]);
+            }
+            return $this->redirect()->toRoute('task-manager');
+        }
+
+        // Verificar se a tarefa existe
+        $task = $this->taskService->getTaskById($id);
+        if (!$task) {
+            $request = $this->getRequest();
+            if ($request instanceof Request && $request->getHeader('X-Requested-With')) {
+                return new JsonModel([
+                    'success' => false,
+                    'message' => 'Tarefa não encontrada'
+                ]);
+            }
+            
+            $this->flashMessenger()->addErrorMessage('Tarefa não encontrada');
+            return $this->redirect()->toRoute('task-manager');
+        }
+
+        $request = $this->getRequest();
+        
+        if ($request instanceof Request && $request->isPost()) {
+            try {
+                $deleted = $this->taskService->deleteTask($id);
+                
+                if ($deleted) {
+                    if ($request->getHeader('X-Requested-With')) {
+                        return new JsonModel([
+                            'success' => true,
+                            'message' => 'Tarefa excluída com sucesso'
+                        ]);
+                    }
+                    
+                    $this->flashMessenger()->addSuccessMessage('Tarefa excluída com sucesso');
+                } else {
+                    if ($request->getHeader('X-Requested-With')) {
+                        return new JsonModel([
+                            'success' => false,
+                            'message' => 'Erro ao excluir tarefa'
+                        ]);
+                    }
+                    
+                    $this->flashMessenger()->addErrorMessage('Erro ao excluir tarefa');
+                }
+            } catch (\Exception $e) {
+                if ($request->getHeader('X-Requested-With')) {
+                    return new JsonModel([
+                        'success' => false,
+                        'message' => 'Erro interno do servidor'
+                    ]);
+                }
+                
+                $this->flashMessenger()->addErrorMessage('Erro ao excluir tarefa');
+            }
+            
+            return $this->redirect()->toRoute('task-manager');
+        }
+
+        return new ViewModel([
+            'task' => $task->toArray()
+        ]);
+    }
+
+    /**
+     * Marca uma tarefa como concluída
+     */
+    public function completeAction()
+    {
+        $id = (int) $this->params()->fromRoute('id', 0);
+        
+        if (!$id) {
+            return new JsonModel([
+                'success' => false,
+                'message' => 'ID da tarefa não fornecido'
+            ]);
         }
 
         try {
-            $task = $this->table->getTask($id);
-            return new ViewModel([
-                'task' => $task,
+            $task = $this->taskService->completeTask($id);
+            
+            if ($task) {
+                return new JsonModel([
+                    'success' => true,
+                    'message' => 'Tarefa marcada como concluída',
+                    'data' => $task->toArray()
+                ]);
+            } else {
+                return new JsonModel([
+                    'success' => false,
+                    'message' => 'Tarefa não encontrada'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return new JsonModel([
+                'success' => false,
+                'message' => 'Erro ao completar tarefa'
             ]);
-        } catch (Exception $e) {
-            $this->flashMessenger()->addErrorMessage('Tarefa não encontrada.');
-            return $this->redirect()->toRoute('task');
+        }
+    }
+
+    /**
+     * Marca uma tarefa como em andamento
+     */
+    public function startAction()
+    {
+        $id = (int) $this->params()->fromRoute('id', 0);
+        
+        if (!$id) {
+            return new JsonModel([
+                'success' => false,
+                'message' => 'ID da tarefa não fornecido'
+            ]);
+        }
+
+        try {
+            $task = $this->taskService->startTask($id);
+            
+            if ($task) {
+                return new JsonModel([
+                    'success' => true,
+                    'message' => 'Tarefa marcada como em andamento',
+                    'data' => $task->toArray()
+                ]);
+            } else {
+                return new JsonModel([
+                    'success' => false,
+                    'message' => 'Tarefa não encontrada'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return new JsonModel([
+                'success' => false,
+                'message' => 'Erro ao iniciar tarefa'
+            ]);
+        }
+    }
+
+    /**
+     * Duplica uma tarefa
+     */
+    public function duplicateAction()
+    {
+        $id = (int) $this->params()->fromRoute('id', 0);
+        
+        if (!$id) {
+            return new JsonModel([
+                'success' => false,
+                'message' => 'ID da tarefa não fornecido'
+            ]);
+        }
+
+        try {
+            $task = $this->taskService->duplicateTask($id);
+            
+            if ($task) {
+                return new JsonModel([
+                    'success' => true,
+                    'message' => 'Tarefa duplicada com sucesso',
+                    'data' => $task->toArray()
+                ]);
+            } else {
+                return new JsonModel([
+                    'success' => false,
+                    'message' => 'Tarefa não encontrada'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return new JsonModel([
+                'success' => false,
+                'message' => 'Erro ao duplicar tarefa'
+            ]);
+        }
+    }
+
+    /**
+     * Retorna estatísticas das tarefas
+     */
+    public function statisticsAction()
+    {
+        $userId = 1; // Usuário fixo para teste
+
+        try {
+            $statistics = $this->taskService->getTaskStatistics($userId);
+            $overdueTasks = $this->taskService->getOverdueTasks($userId);
+
+            $data = array_merge($statistics, [
+                'overdue_tasks' => array_map(function($task) {
+                    return $task->toArray();
+                }, $overdueTasks)
+            ]);
+
+            return new JsonModel([
+                'success' => true,
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            return new JsonModel([
+                'success' => false,
+                'message' => 'Erro ao buscar estatísticas'
+            ]);
         }
     }
 }

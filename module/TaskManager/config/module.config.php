@@ -1,39 +1,116 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TaskManager;
 
 use Laminas\Router\Http\Literal;
 use Laminas\Router\Http\Segment;
-use Laminas\ServiceManager\Factory\InvokableFactory;
+use Laminas\Db\Adapter\AdapterInterface;
 
 return [
     'router' => [
         'routes' => [
-            'task' => [
-                'type'    => Segment::class,
+            'task-manager' => [
+                'type'    => Literal::class,
                 'options' => [
-                    'route'    => '/task[/:action[/:id]]',
-                    'constraints' => [
-                        'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                        'id'     => '[0-9]+',
-                    ],
+                    'route'    => '/tasks',
                     'defaults' => [
                         'controller' => Controller\TaskController::class,
                         'action'     => 'index',
                     ],
                 ],
-            ],
-            'category' => [
-                'type'    => Segment::class,
-                'options' => [
-                    'route'    => '/category[/:action[/:id]]',
-                    'constraints' => [
-                        'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                        'id'     => '[0-9]+',
+                'may_terminate' => true,
+                'child_routes' => [
+                    'view' => [
+                        'type'    => Segment::class,
+                        'options' => [
+                            'route'    => '/view/[:id]',
+                            'constraints' => [
+                                'id' => '[0-9]+',
+                            ],
+                            'defaults' => [
+                                'action' => 'view',
+                            ],
+                        ],
                     ],
-                    'defaults' => [
-                        'controller' => Controller\CategoryController::class,
-                        'action'     => 'index',
+                    'create' => [
+                        'type'    => Literal::class,
+                        'options' => [
+                            'route'    => '/create',
+                            'defaults' => [
+                                'action' => 'create',
+                            ],
+                        ],
+                    ],
+                    'edit' => [
+                        'type'    => Segment::class,
+                        'options' => [
+                            'route'    => '/edit/[:id]',
+                            'constraints' => [
+                                'id' => '[0-9]+',
+                            ],
+                            'defaults' => [
+                                'action' => 'edit',
+                            ],
+                        ],
+                    ],
+                    'delete' => [
+                        'type'    => Segment::class,
+                        'options' => [
+                            'route'    => '/delete/[:id]',
+                            'constraints' => [
+                                'id' => '[0-9]+',
+                            ],
+                            'defaults' => [
+                                'action' => 'delete',
+                            ],
+                        ],
+                    ],
+                    'complete' => [
+                        'type'    => Segment::class,
+                        'options' => [
+                            'route'    => '/complete/[:id]',
+                            'constraints' => [
+                                'id' => '[0-9]+',
+                            ],
+                            'defaults' => [
+                                'action' => 'complete',
+                            ],
+                        ],
+                    ],
+                    'start' => [
+                        'type'    => Segment::class,
+                        'options' => [
+                            'route'    => '/start/[:id]',
+                            'constraints' => [
+                                'id' => '[0-9]+',
+                            ],
+                            'defaults' => [
+                                'action' => 'start',
+                            ],
+                        ],
+                    ],
+                    'duplicate' => [
+                        'type'    => Segment::class,
+                        'options' => [
+                            'route'    => '/duplicate/[:id]',
+                            'constraints' => [
+                                'id' => '[0-9]+',
+                            ],
+                            'defaults' => [
+                                'action' => 'duplicate',
+                            ],
+                        ],
+                    ],
+                    'statistics' => [
+                        'type'    => Literal::class,
+                        'options' => [
+                            'route'    => '/statistics',
+                            'defaults' => [
+                                'action' => 'statistics',
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -42,16 +119,40 @@ return [
 
     'controllers' => [
         'factories' => [
-            Controller\TaskController::class => function($container) {
+            Controller\TaskController::class => function ($container) {
                 return new Controller\TaskController(
-                    $container->get(Model\TaskTable::class),
-                    $container->get(Model\CategoryTable::class)
+                    $container->get(Service\TaskService::class)
                 );
             },
-            Controller\CategoryController::class => function($container) {
-                return new Controller\CategoryController(
-                    $container->get(Model\CategoryTable::class)
+        ],
+    ],
+
+    'service_manager' => [
+        'factories' => [
+            Service\TaskService::class => function ($container) {
+                return new Service\TaskService(
+                    $container->get(Repository\TaskRepository::class)
                 );
+            },
+            Repository\TaskRepository::class => function ($container) {
+                return new Repository\TaskRepository(
+                    $container->get(AdapterInterface::class)
+                );
+            },
+        ],
+    ],
+
+    'view_helpers' => [
+        'aliases' => [
+            'getStatusBadgeClass' => View\Helper\GetStatusBadgeClass::class,
+            'getPriorityBadgeClass' => View\Helper\GetPriorityBadgeClass::class,
+        ],
+        'factories' => [
+            View\Helper\GetStatusBadgeClass::class => function() {
+                return new View\Helper\GetStatusBadgeClass();
+            },
+            View\Helper\GetPriorityBadgeClass::class => function() {
+                return new View\Helper\GetPriorityBadgeClass();
             },
         ],
     ],

@@ -2,172 +2,238 @@
 $title = 'Gerenciador de Tarefas';
 $this->headTitle($title);
 ?>
-<div class="row">
-    <div class="col-md-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><?= $this->escapeHtml($title) ?></h1>
-            <div>
-                <a href="<?= $this->url('task', ['action' => 'add']) ?>" class="btn btn-success">
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0"><?= $this->escapeHtml($title) ?></h1>
+                <a href="<?= $this->url('task-manager/create') ?>" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Nova Tarefa
                 </a>
-                <a href="<?= $this->url('category') ?>" class="btn btn-outline-primary">
-                    <i class="fas fa-tags"></i> Categorias
-                </a>
-            </div>
-        </div>
-
-        <?php if (count($tasks) == 0): ?>
-            <div class="alert alert-info text-center">
-                <h4>Nenhuma tarefa encontrada</h4>
-                <p>Comece criando sua primeira tarefa!</p>
-                <a href="<?= $this->url('task', ['action' => 'add']) ?>" class="btn btn-primary">
-                    Criar primeira tarefa
-                </a>
-            </div>
-        <?php else: ?>
-            <!-- Filtros e estatísticas -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card bg-primary text-white">
-                        <div class="card-body">
-                            <h5 class="card-title">Total de Tarefas</h5>
-                            <h2><?= count($tasks) ?></h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-warning text-white">
-                        <div class="card-body">
-                            <h5 class="card-title">Pendentes</h5>
-                            <h2><?php
-                                $pending = 0;
-                                foreach ($tasks as $task) {
-                                    if ($task->status === 'pending') $pending++;
-                                }
-                                echo $pending;
-                            ?></h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-info text-white">
-                        <div class="card-body">
-                            <h5 class="card-title">Em Andamento</h5>
-                            <h2><?php
-                                $inProgress = 0;
-                                foreach ($tasks as $task) {
-                                    if ($task->status === 'in_progress') $inProgress++;
-                                }
-                                echo $inProgress;
-                            ?></h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-success text-white">
-                        <div class="card-body">
-                            <h5 class="card-title">Concluídas</h5>
-                            <h2><?php
-                                $completed = 0;
-                                foreach ($tasks as $task) {
-                                    if ($task->status === 'completed') $completed++;
-                                }
-                                echo $completed;
-                            ?></h2>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <!-- Lista de tarefas -->
-            <div class="card">
+            <!-- Filtros -->
+            <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Lista de Tarefas</h5>
+                    <h5 class="mb-0">Filtros</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Título</th>
-                                    <th>Status</th>
-                                    <th>Prioridade</th>
-                                    <th>Categoria</th>
-                                    <th>Vencimento</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($tasks as $task): ?>
-                                    <tr class="<?= $task->isOverdue() ? 'table-danger' : '' ?>">
-                                        <td>
-                                            <strong><?= $this->escapeHtml($task->title) ?></strong>
-                                            <?php if ($task->description): ?>
-                                                <br><small class="text-muted"><?= $this->escapeHtml(substr($task->description, 0, 100)) ?><?= strlen($task->description) > 100 ? '...' : '' ?></small>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <span class="badge badge-<?= $task->status === 'completed' ? 'success' : ($task->status === 'in_progress' ? 'info' : ($task->status === 'cancelled' ? 'secondary' : 'warning')) ?>">
-                                                <?= $this->escapeHtml($task->getStatusLabel()) ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="<?= $task->getPriorityClass() ?>">
-                                                <?= $this->escapeHtml($task->getPriorityLabel()) ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <?php 
-                                            $categoryName = 'Sem categoria';
-                                            if ($task->category_id) {
-                                                foreach ($categories as $category) {
-                                                    if ($category->id == $task->category_id) {
-                                                        $categoryName = $category->name;
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                            echo $this->escapeHtml($categoryName);
-                                            ?>
-                                        </td>
-                                        <td>
-                                            <?php if ($task->due_date): ?>
-                                                <?= date('d/m/Y H:i', strtotime($task->due_date)) ?>
-                                                <?php if ($task->isOverdue()): ?>
-                                                    <br><small class="text-danger"><strong>Atrasada!</strong></small>
-                                                <?php endif; ?>
-                                            <?php else: ?>
-                                                <span class="text-muted">Sem prazo</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <div class="btn-group" role="group">
-                                                <a href="<?= $this->url('task', ['action' => 'view', 'id' => $task->id]) ?>" 
-                                                   class="btn btn-sm btn-outline-info" title="Visualizar">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="<?= $this->url('task', ['action' => 'edit', 'id' => $task->id]) ?>" 
-                                                   class="btn btn-sm btn-outline-primary" title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <a href="<?= $this->url('task', ['action' => 'toggle-status', 'id' => $task->id]) ?>" 
-                                                   class="btn btn-sm btn-outline-<?= $task->status === 'completed' ? 'warning' : 'success' ?>" 
-                                                   title="<?= $task->status === 'completed' ? 'Marcar como pendente' : 'Marcar como concluída' ?>">
-                                                    <i class="fas fa-<?= $task->status === 'completed' ? 'undo' : 'check' ?>"></i>
-                                                </a>
-                                                <a href="<?= $this->url('task', ['action' => 'delete', 'id' => $task->id]) ?>" 
-                                                   class="btn btn-sm btn-outline-danger" title="Excluir">
-                                                    <i class="fas fa-trash"></i>
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="<?= $this->escapeHtmlAttr($filters['search'] ?? '') ?>" 
+                                   placeholder="Título da tarefa...">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Todos</option>
+                                <?php foreach ($availableStatuses as $key => $label): ?>
+                                    <option value="<?= $this->escapeHtmlAttr($key) ?>" 
+                                            <?= isset($filters['status']) && $filters['status'] === $key ? 'selected' : '' ?>>
+                                        <?= $this->escapeHtml($label) ?>
+                                    </option>
                                 <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="priority" class="form-label">Prioridade</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="">Todas</option>
+                                <?php foreach ($availablePriorities as $key => $label): ?>
+                                    <option value="<?= $this->escapeHtmlAttr($key) ?>" 
+                                            <?= isset($filters['priority']) && $filters['priority'] === $key ? 'selected' : '' ?>>
+                                        <?= $this->escapeHtml($label) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="order_by" class="form-label">Ordenar por</label>
+                            <select class="form-select" id="order_by" name="order_by">
+                                <option value="created_at" <?= ($filters['order_by'] ?? 'created_at') === 'created_at' ? 'selected' : '' ?>>Data de Criação</option>
+                                <option value="due_date" <?= ($filters['order_by'] ?? '') === 'due_date' ? 'selected' : '' ?>>Data de Vencimento</option>
+                                <option value="priority" <?= ($filters['order_by'] ?? '') === 'priority' ? 'selected' : '' ?>>Prioridade</option>
+                                <option value="title" <?= ($filters['order_by'] ?? '') === 'title' ? 'selected' : '' ?>>Título</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <label for="order_direction" class="form-label">Direção</label>
+                            <select class="form-select" id="order_direction" name="order_direction">
+                                <option value="DESC" <?= ($filters['order_direction'] ?? 'DESC') === 'DESC' ? 'selected' : '' ?>>Desc</option>
+                                <option value="ASC" <?= ($filters['order_direction'] ?? '') === 'ASC' ? 'selected' : '' ?>>Asc</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-outline-primary me-2">Filtrar</button>
+                            <a href="<?= $this->url('task-manager') ?>" class="btn btn-outline-secondary">Limpar</a>
+                        </div>
+                    </form>
                 </div>
             </div>
-        <?php endif; ?>
+
+            <!-- Lista de Tarefas -->
+            <?php if (empty($tasks)): ?>
+                <div class="alert alert-info text-center">
+                    <h4>Nenhuma tarefa encontrada</h4>
+                    <p>Comece criando sua primeira tarefa!</p>
+                    <a href="<?= $this->url('task-manager/create') ?>" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Criar Primeira Tarefa
+                    </a>
+                </div>
+            <?php else: ?>
+                <div class="row">
+                    <?php foreach ($tasks as $task): ?>
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 <?= $task['is_overdue'] ? 'border-danger' : '' ?>">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge <?= $this->getStatusBadgeClass($task['status']) ?>">
+                                            <?= $this->escapeHtml($availableStatuses[$task['status']]) ?>
+                                        </span>
+                                        <span class="badge <?= $this->getPriorityBadgeClass($task['priority']) ?>">
+                                            <?= $this->escapeHtml($availablePriorities[$task['priority']]) ?>
+                                        </span>
+                                    </div>
+                                    <?php if ($task['is_overdue']): ?>
+                                        <small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Vencida</small>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="card-title"><?= $this->escapeHtml($task['title']) ?></h5>
+                                    <?php if ($task['description']): ?>
+                                        <p class="card-text"><?= $this->escapeHtml(substr($task['description'], 0, 100)) ?><?= strlen($task['description']) > 100 ? '...' : '' ?></p>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($task['due_date']): ?>
+                                        <p class="card-text">
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar"></i> 
+                                                Vence em: <?= date('d/m/Y H:i', strtotime($task['due_date'])) ?>
+                                            </small>
+                                        </p>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="<?= $this->url('task-manager/view', ['id' => $task['id']]) ?>" 
+                                           class="btn btn-outline-primary btn-sm">Ver</a>
+                                        <a href="<?= $this->url('task-manager/edit', ['id' => $task['id']]) ?>" 
+                                           class="btn btn-outline-secondary btn-sm">Editar</a>
+                                        
+                                        <?php if (!$task['is_completed']): ?>
+                                            <button type="button" class="btn btn-outline-success btn-sm" 
+                                                    onclick="completeTask(<?= $task['id'] ?>)">Concluir</button>
+                                        <?php endif; ?>
+                                    </div>
+                                    
+                                    <div class="btn-group w-100 mt-1" role="group">
+                                        <button type="button" class="btn btn-outline-info btn-sm" 
+                                                onclick="duplicateTask(<?= $task['id'] ?>)">Duplicar</button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                onclick="deleteTask(<?= $task['id'] ?>)">Excluir</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Paginação -->
+                <?php if ($pagination['total_pages'] > 1): ?>
+                    <nav aria-label="Paginação de tarefas">
+                        <ul class="pagination justify-content-center">
+                            <?php if ($pagination['page'] > 1): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="<?= $this->url('task-manager', [], ['query' => array_merge($_GET, ['page' => $pagination['page'] - 1])]) ?>">Anterior</a>
+                                </li>
+                            <?php endif; ?>
+                            
+                            <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
+                                <li class="page-item <?= $i === $pagination['page'] ? 'active' : '' ?>">
+                                    <a class="page-link" href="<?= $this->url('task-manager', [], ['query' => array_merge($_GET, ['page' => $i])]) ?>"><?= $i ?></a>
+                                </li>
+                            <?php endfor; ?>
+                            
+                            <?php if ($pagination['page'] < $pagination['total_pages']): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="<?= $this->url('task-manager', [], ['query' => array_merge($_GET, ['page' => $pagination['page'] + 1])]) ?>">Próximo</a>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+                    </nav>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
+
+<script>
+function completeTask(id) {
+    if (confirm('Marcar esta tarefa como concluída?')) {
+        fetch(`/tasks/complete/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao completar tarefa');
+        });
+    }
+}
+
+function duplicateTask(id) {
+    if (confirm('Duplicar esta tarefa?')) {
+        fetch(`/tasks/duplicate/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao duplicar tarefa');
+        });
+    }
+}
+
+function deleteTask(id) {
+    if (confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
+        fetch(`/tasks/delete/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao excluir tarefa');
+        });
+    }
+}
+</script>

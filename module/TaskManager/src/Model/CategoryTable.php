@@ -74,11 +74,11 @@ class CategoryTable
     {
         $categories = $this->fetchAll($userId);
         $options = [];
-        
+
         foreach ($categories as $category) {
             $options[$category->id] = $category->name;
         }
-        
+
         return $options;
     }
 }
