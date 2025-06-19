@@ -15,6 +15,7 @@
         "laminas/laminas-db": "^2.20",
         "laminas/laminas-development-mode": "^3.12.0",
         "laminas/laminas-mvc": "^3.7.0",
+        "laminas/laminas-mvc-plugin-flashmessenger": "^1.11",
         "laminas/laminas-skeleton-installer": "^1.3.0"
     },
     "require-dev": {
