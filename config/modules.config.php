@@ -10,4 +10,5 @@ return [
     'Laminas\Router',
     'Laminas\Validator',
     'Application',
+    'TaskManager',
 ];
