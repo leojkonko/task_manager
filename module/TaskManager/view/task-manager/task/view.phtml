@@ -1,5 +1,5 @@
 <?php
-$title = 'Visualizar Tarefa';
+$title = 'Detalhes da Tarefa';
 $this->headTitle($title);
 ?>
 <div class="row">
@@ -33,7 +33,7 @@ $this->headTitle($title);
                         <strong>Prioridade:</strong>
                     </div>
                     <div class="col-md-9">
-                        <span class="<?= $task->getPriorityClass() ?>">
+                        <span class="<?= $task->getPriorityClass() ?> font-weight-bold">
                             <i class="fas fa-flag"></i> <?= $this->escapeHtml($task->getPriorityLabel()) ?>
                         </span>
                     </div>
@@ -46,22 +46,20 @@ $this->headTitle($title);
                     </div>
                     <div class="col-md-9">
                         <?= date('d/m/Y H:i', strtotime($task->due_date)) ?>
-                        <?php if ($task->isOverdue() && $task->status !== 'completed'): ?>
+                        <?php if ($task->isOverdue()): ?>
                             <span class="badge badge-danger ml-2">
                                 <i class="fas fa-exclamation-triangle"></i> Atrasada
                             </span>
                         <?php endif; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <?php if ($task->completed_at): ?>
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <strong>Concluída em:</strong>
-                    </div>
-                    <div class="col-md-9">
-                        <?= date('d/m/Y H:i', strtotime($task->completed_at)) ?>
+                        
+                        <?php 
+                        $daysUntilDue = $task->getDaysUntilDue();
+                        if ($daysUntilDue !== null && !$task->isOverdue() && $task->status !== 'completed'): 
+                        ?>
+                            <small class="text-muted ml-2">
+                                (<?= $daysUntilDue ?> <?= $daysUntilDue == 1 ? 'dia' : 'dias' ?> restantes)
+                            </small>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -86,13 +84,26 @@ $this->headTitle($title);
                 </div>
                 <?php endif; ?>
 
+                <?php if ($task->completed_at): ?>
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Concluída em:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <span class="text-success">
+                            <i class="fas fa-check-circle"></i> <?= date('d/m/Y H:i', strtotime($task->completed_at)) ?>
+                        </span>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <?php if ($task->description): ?>
                 <hr>
                 <div class="row">
                     <div class="col-md-12">
                         <h5>Descrição</h5>
                         <div class="bg-light p-3 rounded">
-                            <?= $this->escapeHtml($task->description) ?>
+                            <?= nl2br($this->escapeHtml($task->description)) ?>
                         </div>
                     </div>
                 </div>
@@ -124,6 +135,8 @@ $this->headTitle($title);
                         <i class="fas fa-edit"></i> Editar Tarefa
                     </a>
                     
+                    <hr>
+                    
                     <a href="<?= $this->url('task', ['action' => 'delete', 'id' => $task->id]) ?>" 
                        class="btn btn-danger"
                        onclick="return confirm('Tem certeza que deseja excluir esta tarefa?')">
@@ -134,17 +147,32 @@ $this->headTitle($title);
         </div>
 
         <?php if ($task->isOverdue() && $task->status !== 'completed'): ?>
-        <div class="card mt-3">
+        <div class="card mt-3 border-danger">
             <div class="card-header bg-danger text-white">
-                <h6 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Atenção!</h6>
+                <h6 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Tarefa Atrasada</h6>
             </div>
             <div class="card-body">
                 <p class="text-danger mb-0">
-                    Esta tarefa está <strong>atrasada</strong>. 
-                    Consider atualizá-la ou reagendá-la.
+                    Esta tarefa está atrasada há <?= abs($task->getDaysUntilDue()) ?> 
+                    <?= abs($task->getDaysUntilDue()) == 1 ? 'dia' : 'dias' ?>.
                 </p>
             </div>
         </div>
         <?php endif; ?>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">Informações</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li><small class="text-muted">ID: <?= $task->id ?></small></li>
+                    <li><small class="text-muted">Usuário: <?= $task->user_id ?></small></li>
+                    <?php if ($task->category_id): ?>
+                        <li><small class="text-muted">Categoria: <?= $task->category_id ?></small></li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
     </div>
 </div>
