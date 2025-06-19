@@ -1,0 +1,150 @@
+<?php
+$title = 'Visualizar Tarefa';
+$this->headTitle($title);
+?>
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><?= $this->escapeHtml($task->title) ?></h4>
+                <div>
+                    <a href="<?= $this->url('task', ['action' => 'edit', 'id' => $task->id]) ?>" class="btn btn-primary btn-sm">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="<?= $this->url('task') ?>" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Status:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <span class="badge badge-<?= $task->status === 'completed' ? 'success' : ($task->status === 'in_progress' ? 'info' : ($task->status === 'cancelled' ? 'secondary' : 'warning')) ?> badge-lg">
+                            <?= $this->escapeHtml($task->getStatusLabel()) ?>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Prioridade:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <span class="<?= $task->getPriorityClass() ?>">
+                            <i class="fas fa-flag"></i> <?= $this->escapeHtml($task->getPriorityLabel()) ?>
+                        </span>
+                    </div>
+                </div>
+
+                <?php if ($task->due_date): ?>
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Vencimento:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <?= date('d/m/Y H:i', strtotime($task->due_date)) ?>
+                        <?php if ($task->isOverdue() && $task->status !== 'completed'): ?>
+                            <span class="badge badge-danger ml-2">
+                                <i class="fas fa-exclamation-triangle"></i> Atrasada
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($task->completed_at): ?>
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Concluída em:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <?= date('d/m/Y H:i', strtotime($task->completed_at)) ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Criada em:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <?= date('d/m/Y H:i', strtotime($task->created_at)) ?>
+                    </div>
+                </div>
+
+                <?php if ($task->updated_at !== $task->created_at): ?>
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Atualizada em:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <?= date('d/m/Y H:i', strtotime($task->updated_at)) ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($task->description): ?>
+                <hr>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5>Descrição</h5>
+                        <div class="bg-light p-3 rounded">
+                            <?= $this->escapeHtml($task->description) ?>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Ações Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <?php if ($task->status !== 'completed'): ?>
+                        <a href="<?= $this->url('task', ['action' => 'toggle-status', 'id' => $task->id]) ?>" 
+                           class="btn btn-success">
+                            <i class="fas fa-check"></i> Marcar como Concluída
+                        </a>
+                    <?php else: ?>
+                        <a href="<?= $this->url('task', ['action' => 'toggle-status', 'id' => $task->id]) ?>" 
+                           class="btn btn-warning">
+                            <i class="fas fa-undo"></i> Marcar como Pendente
+                        </a>
+                    <?php endif; ?>
+                    
+                    <a href="<?= $this->url('task', ['action' => 'edit', 'id' => $task->id]) ?>" 
+                       class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Editar Tarefa
+                    </a>
+                    
+                    <a href="<?= $this->url('task', ['action' => 'delete', 'id' => $task->id]) ?>" 
+                       class="btn btn-danger"
+                       onclick="return confirm('Tem certeza que deseja excluir esta tarefa?')">
+                        <i class="fas fa-trash"></i> Excluir Tarefa
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <?php if ($task->isOverdue() && $task->status !== 'completed'): ?>
+        <div class="card mt-3">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Atenção!</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-danger mb-0">
+                    Esta tarefa está <strong>atrasada</strong>. 
+                    Consider atualizá-la ou reagendá-la.
+                </p>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>

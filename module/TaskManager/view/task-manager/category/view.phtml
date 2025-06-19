@@ -1,0 +1,125 @@
+<?php
+$title = 'Visualizar Categoria';
+$this->headTitle($title);
+?>
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center" 
+                 style="background-color: <?= $this->escapeHtml($category->color) ?>; color: white;">
+                <h4 class="mb-0"><?= $this->escapeHtml($category->name) ?></h4>
+                <div>
+                    <a href="<?= $this->url('category', ['action' => 'edit', 'id' => $category->id]) ?>" class="btn btn-light btn-sm">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="<?= $this->url('category') ?>" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Nome:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <?= $this->escapeHtml($category->name) ?>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Cor:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="d-flex align-items-center">
+                            <div class="color-sample mr-3" 
+                                 style="width: 40px; height: 40px; background-color: <?= $this->escapeHtml($category->color) ?>; border-radius: 5px; border: 1px solid #ddd;"></div>
+                            <span class="badge" style="background-color: <?= $this->escapeHtml($category->color) ?>; color: white;">
+                                <?= $this->escapeHtml($category->color) ?>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Criada em:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <?= date('d/m/Y H:i', strtotime($category->created_at)) ?>
+                    </div>
+                </div>
+
+                <?php if ($category->updated_at !== $category->created_at): ?>
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Atualizada em:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <?= date('d/m/Y H:i', strtotime($category->updated_at)) ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($category->description): ?>
+                <hr>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5>Descrição</h5>
+                        <div class="bg-light p-3 rounded">
+                            <?= $this->escapeHtml($category->description) ?>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Ações</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="<?= $this->url('category', ['action' => 'edit', 'id' => $category->id]) ?>" 
+                       class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Editar Categoria
+                    </a>
+                    
+                    <a href="<?= $this->url('category', ['action' => 'delete', 'id' => $category->id]) ?>" 
+                       class="btn btn-danger"
+                       onclick="return confirm('Tem certeza que deseja excluir esta categoria?')">
+                        <i class="fas fa-trash"></i> Excluir Categoria
+                    </a>
+                    
+                    <hr>
+                    
+                    <a href="<?= $this->url('task', ['action' => 'add']) ?>?category_id=<?= $category->id ?>" 
+                       class="btn btn-success">
+                        <i class="fas fa-plus"></i> Nova Tarefa nesta Categoria
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Preview</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-2">Como esta categoria aparece nas tarefas:</p>
+                <div class="example-task-card">
+                    <div class="border rounded p-2">
+                        <div class="d-flex align-items-center">
+                            <div class="color-indicator mr-2" 
+                                 style="width: 16px; height: 16px; background-color: <?= $this->escapeHtml($category->color) ?>; border-radius: 3px;"></div>
+                            <small class="text-muted"><?= $this->escapeHtml($category->name) ?></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

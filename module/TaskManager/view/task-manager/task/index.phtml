@@ -1,0 +1,173 @@
+<?php
+$title = 'Gerenciador de Tarefas';
+$this->headTitle($title);
+?>
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><?= $this->escapeHtml($title) ?></h1>
+            <div>
+                <a href="<?= $this->url('task', ['action' => 'add']) ?>" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Nova Tarefa
+                </a>
+                <a href="<?= $this->url('category') ?>" class="btn btn-outline-primary">
+                    <i class="fas fa-tags"></i> Categorias
+                </a>
+            </div>
+        </div>
+
+        <?php if (count($tasks) == 0): ?>
+            <div class="alert alert-info text-center">
+                <h4>Nenhuma tarefa encontrada</h4>
+                <p>Comece criando sua primeira tarefa!</p>
+                <a href="<?= $this->url('task', ['action' => 'add']) ?>" class="btn btn-primary">
+                    Criar primeira tarefa
+                </a>
+            </div>
+        <?php else: ?>
+            <!-- Filtros e estatísticas -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Total de Tarefas</h5>
+                            <h2><?= count($tasks) ?></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Pendentes</h5>
+                            <h2><?php
+                                $pending = 0;
+                                foreach ($tasks as $task) {
+                                    if ($task->status === 'pending') $pending++;
+                                }
+                                echo $pending;
+                            ?></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Em Andamento</h5>
+                            <h2><?php
+                                $inProgress = 0;
+                                foreach ($tasks as $task) {
+                                    if ($task->status === 'in_progress') $inProgress++;
+                                }
+                                echo $inProgress;
+                            ?></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Concluídas</h5>
+                            <h2><?php
+                                $completed = 0;
+                                foreach ($tasks as $task) {
+                                    if ($task->status === 'completed') $completed++;
+                                }
+                                echo $completed;
+                            ?></h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de tarefas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Lista de Tarefas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Título</th>
+                                    <th>Status</th>
+                                    <th>Prioridade</th>
+                                    <th>Categoria</th>
+                                    <th>Vencimento</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($tasks as $task): ?>
+                                    <tr class="<?= $task->isOverdue() ? 'table-danger' : '' ?>">
+                                        <td>
+                                            <strong><?= $this->escapeHtml($task->title) ?></strong>
+                                            <?php if ($task->description): ?>
+                                                <br><small class="text-muted"><?= $this->escapeHtml(substr($task->description, 0, 100)) ?><?= strlen($task->description) > 100 ? '...' : '' ?></small>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-<?= $task->status === 'completed' ? 'success' : ($task->status === 'in_progress' ? 'info' : ($task->status === 'cancelled' ? 'secondary' : 'warning')) ?>">
+                                                <?= $this->escapeHtml($task->getStatusLabel()) ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="<?= $task->getPriorityClass() ?>">
+                                                <?= $this->escapeHtml($task->getPriorityLabel()) ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <?php 
+                                            $categoryName = 'Sem categoria';
+                                            if ($task->category_id) {
+                                                foreach ($categories as $category) {
+                                                    if ($category->id == $task->category_id) {
+                                                        $categoryName = $category->name;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            echo $this->escapeHtml($categoryName);
+                                            ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($task->due_date): ?>
+                                                <?= date('d/m/Y H:i', strtotime($task->due_date)) ?>
+                                                <?php if ($task->isOverdue()): ?>
+                                                    <br><small class="text-danger"><strong>Atrasada!</strong></small>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <span class="text-muted">Sem prazo</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="<?= $this->url('task', ['action' => 'view', 'id' => $task->id]) ?>" 
+                                                   class="btn btn-sm btn-outline-info" title="Visualizar">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="<?= $this->url('task', ['action' => 'edit', 'id' => $task->id]) ?>" 
+                                                   class="btn btn-sm btn-outline-primary" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="<?= $this->url('task', ['action' => 'toggle-status', 'id' => $task->id]) ?>" 
+                                                   class="btn btn-sm btn-outline-<?= $task->status === 'completed' ? 'warning' : 'success' ?>" 
+                                                   title="<?= $task->status === 'completed' ? 'Marcar como pendente' : 'Marcar como concluída' ?>">
+                                                    <i class="fas fa-<?= $task->status === 'completed' ? 'undo' : 'check' ?>"></i>
+                                                </a>
+                                                <a href="<?= $this->url('task', ['action' => 'delete', 'id' => $task->id]) ?>" 
+                                                   class="btn btn-sm btn-outline-danger" title="Excluir">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>

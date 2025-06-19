@@ -1,0 +1,111 @@
+<?php
+$title = isset($this->id) ? 'Editar Tarefa' : 'Nova Tarefa';
+$this->headTitle($title);
+?>
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><?= $this->escapeHtml($title) ?></h4>
+            </div>
+            <div class="card-body">
+                <?php
+                $form = $this->form;
+                $form->setAttribute('action', $this->url('task', ['action' => isset($this->id) ? 'edit' : 'add', 'id' => $this->id ?? null]));
+                $form->prepare();
+                ?>
+
+                <?= $this->form()->openTag($form) ?>
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <?= $this->formLabel($form->get('title')) ?>
+                            <?= $this->formElement($form->get('title')) ?>
+                            <?= $this->formElementErrors($form->get('title')) ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <?= $this->formLabel($form->get('description')) ?>
+                            <?= $this->formElement($form->get('description')) ?>
+                            <?= $this->formElementErrors($form->get('description')) ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <?= $this->formLabel($form->get('status')) ?>
+                            <?= $this->formElement($form->get('status')) ?>
+                            <?= $this->formElementErrors($form->get('status')) ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <?= $this->formLabel($form->get('priority')) ?>
+                            <?= $this->formElement($form->get('priority')) ?>
+                            <?= $this->formElementErrors($form->get('priority')) ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <?= $this->formLabel($form->get('category_id')) ?>
+                            <?= $this->formElement($form->get('category_id')) ?>
+                            <?= $this->formElementErrors($form->get('category_id')) ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <?= $this->formLabel($form->get('due_date')) ?>
+                            <?= $this->formElement($form->get('due_date')) ?>
+                            <?= $this->formElementErrors($form->get('due_date')) ?>
+                        </div>
+                    </div>
+                </div>
+
+                <?= $this->formHidden($form->get('id')) ?>
+
+                <div class="form-group mt-3">
+                    <?= $this->formElement($form->get('submit')) ?>
+                    <a href="<?= $this->url('task') ?>" class="btn btn-secondary ml-2">Cancelar</a>
+                </div>
+
+                <?= $this->form()->closeTag() ?>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Dicas</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-lightbulb text-warning"></i> <strong>Título:</strong> Seja claro e específico</li>
+                    <li><i class="fas fa-align-left text-info"></i> <strong>Descrição:</strong> Detalhe o que precisa ser feito</li>
+                    <li><i class="fas fa-flag text-danger"></i> <strong>Prioridade:</strong> Ajuda a organizar suas tarefas</li>
+                    <li><i class="fas fa-calendar text-primary"></i> <strong>Prazo:</strong> Defina quando deve ser concluída</li>
+                    <li><i class="fas fa-tag text-success"></i> <strong>Categoria:</strong> Organize por projeto ou tipo</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Status das Tarefas:</h6>
+                <ul class="list-unstyled small">
+                    <li><span class="badge badge-warning">Pendente</span> - Ainda não iniciada</li>
+                    <li><span class="badge badge-info">Em Andamento</span> - Sendo executada</li>
+                    <li><span class="badge badge-success">Concluída</span> - Finalizada</li>
+                    <li><span class="badge badge-secondary">Cancelada</span> - Não será executada</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

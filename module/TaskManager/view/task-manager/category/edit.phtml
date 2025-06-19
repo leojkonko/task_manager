@@ -1,0 +1,125 @@
+<?php
+$title = isset($this->id) ? 'Editar Categoria' : 'Nova Categoria';
+$this->headTitle($title);
+?>
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><?= $this->escapeHtml($title) ?></h4>
+            </div>
+            <div class="card-body">
+                <?php
+                $form = $this->form;
+                $form->setAttribute('action', $this->url('category', ['action' => isset($this->id) ? 'edit' : 'add', 'id' => $this->id ?? null]));
+                $form->prepare();
+                ?>
+
+                <?= $this->form()->openTag($form) ?>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <?= $this->formLabel($form->get('name')) ?>
+                            <?= $this->formElement($form->get('name')) ?>
+                            <?= $this->formElementErrors($form->get('name')) ?>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <?= $this->formLabel($form->get('color')) ?>
+                            <?= $this->formElement($form->get('color')) ?>
+                            <?= $this->formElementErrors($form->get('color')) ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <?= $this->formLabel($form->get('description')) ?>
+                            <?= $this->formElement($form->get('description')) ?>
+                            <?= $this->formElementErrors($form->get('description')) ?>
+                        </div>
+                    </div>
+                </div>
+
+                <?= $this->formHidden($form->get('id')) ?>
+
+                <div class="form-group mt-3">
+                    <?= $this->formElement($form->get('submit')) ?>
+                    <a href="<?= $this->url('category') ?>" class="btn btn-secondary ml-2">Cancelar</a>
+                </div>
+
+                <?= $this->form()->closeTag() ?>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Preview da Categoria</h5>
+            </div>
+            <div class="card-body">
+                <div class="category-preview">
+                    <div class="card">
+                        <div class="card-header text-white" id="preview-header" style="background-color: #007bff;">
+                            <h6 class="mb-0" id="preview-name">Nome da Categoria</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text" id="preview-description">Descrição da categoria aparecerá aqui</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Dicas</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-lightbulb text-warning"></i> <strong>Nome:</strong> Use nomes curtos e descritivos</li>
+                    <li><i class="fas fa-palette text-info"></i> <strong>Cor:</strong> Escolha cores que facilitem a identificação</li>
+                    <li><i class="fas fa-align-left text-success"></i> <strong>Descrição:</strong> Explique o propósito da categoria</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Exemplos de Categorias:</h6>
+                <ul class="list-unstyled small">
+                    <li><span class="badge" style="background-color: #007bff; color: white;">Trabalho</span> - Tarefas profissionais</li>
+                    <li><span class="badge" style="background-color: #28a745; color: white;">Pessoal</span> - Atividades pessoais</li>
+                    <li><span class="badge" style="background-color: #dc3545; color: white;">Urgente</span> - Prioridade máxima</li>
+                    <li><span class="badge" style="background-color: #6f42c1; color: white;">Estudos</span> - Aprendizado</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.querySelector('input[name="name"]');
+    const colorInput = document.querySelector('input[name="color"]');
+    const descriptionInput = document.querySelector('textarea[name="description"]');
+    
+    const previewName = document.getElementById('preview-name');
+    const previewHeader = document.getElementById('preview-header');
+    const previewDescription = document.getElementById('preview-description');
+
+    function updatePreview() {
+        previewName.textContent = nameInput.value || 'Nome da Categoria';
+        previewHeader.style.backgroundColor = colorInput.value;
+        previewDescription.textContent = descriptionInput.value || 'Descrição da categoria aparecerá aqui';
+    }
+
+    nameInput.addEventListener('input', updatePreview);
+    colorInput.addEventListener('input', updatePreview);
+    descriptionInput.addEventListener('input', updatePreview);
+    
+    // Atualizar preview inicial
+    updatePreview();
+});
+</script>

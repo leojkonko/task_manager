@@ -1,0 +1,54 @@
+<?php
+$title = 'Excluir Categoria';
+$this->headTitle($title);
+?>
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> <?= $this->escapeHtml($title) ?></h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>Atenção!</strong> Esta ação não pode ser desfeita. Todas as tarefas associadas a esta categoria ficarão sem categoria.
+                </div>
+                
+                <p>Tem certeza que deseja excluir a seguinte categoria?</p>
+                
+                <div class="card mb-3">
+                    <div class="card-header d-flex align-items-center" 
+                         style="background-color: <?= $this->escapeHtml($category->color) ?>; color: white;">
+                        <h5 class="mb-0"><?= $this->escapeHtml($category->name) ?></h5>
+                    </div>
+                    <div class="card-body">
+                        <?php if ($category->description): ?>
+                            <p class="card-text"><?= $this->escapeHtml($category->description) ?></p>
+                        <?php else: ?>
+                            <p class="card-text text-muted">Sem descrição</p>
+                        <?php endif; ?>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Cor: <span class="badge" style="background-color: <?= $this->escapeHtml($category->color) ?>; color: white;">
+                                    <?= $this->escapeHtml($category->color) ?>
+                                </span>
+                                | Criada em: <?= date('d/m/Y H:i', strtotime($category->created_at)) ?>
+                            </small>
+                        </p>
+                    </div>
+                </div>
+
+                <form action="<?= $this->url('category', ['action' => 'delete', 'id' => $category->id]) ?>" method="post">
+                    <input type="hidden" name="id" value="<?= (int) $category->id ?>" />
+                    <div class="form-group text-center">
+                        <button type="submit" name="del" value="Sim" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Sim, excluir
+                        </button>
+                        <a href="<?= $this->url('category') ?>" class="btn btn-secondary ml-2">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

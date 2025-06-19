@@ -1,0 +1,139 @@
+<?php
+$title = 'Gerenciar Categorias';
+$this->headTitle($title);
+?>
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><?= $this->escapeHtml($title) ?></h1>
+            <div>
+                <a href="<?= $this->url('category', ['action' => 'add']) ?>" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Nova Categoria
+                </a>
+                <a href="<?= $this->url('task') ?>" class="btn btn-outline-primary">
+                    <i class="fas fa-tasks"></i> Tarefas
+                </a>
+            </div>
+        </div>
+
+        <?php if (count($categories) == 0): ?>
+            <div class="alert alert-info text-center">
+                <h4>Nenhuma categoria encontrada</h4>
+                <p>Organize suas tarefas criando categorias!</p>
+                <a href="<?= $this->url('category', ['action' => 'add']) ?>" class="btn btn-primary">
+                    Criar primeira categoria
+                </a>
+            </div>
+        <?php else: ?>
+            <div class="row">
+                <?php foreach ($categories as $category): ?>
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center" 
+                                 style="background-color: <?= $this->escapeHtml($category->color) ?>; color: white;">
+                                <h5 class="mb-0"><?= $this->escapeHtml($category->name) ?></h5>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" 
+                                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="<?= $this->url('category', ['action' => 'view', 'id' => $category->id]) ?>">
+                                            <i class="fas fa-eye"></i> Visualizar
+                                        </a>
+                                        <a class="dropdown-item" href="<?= $this->url('category', ['action' => 'edit', 'id' => $category->id]) ?>">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-danger" href="<?= $this->url('category', ['action' => 'delete', 'id' => $category->id]) ?>">
+                                            <i class="fas fa-trash"></i> Excluir
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <?php if ($category->description): ?>
+                                    <p class="card-text"><?= $this->escapeHtml($category->description) ?></p>
+                                <?php else: ?>
+                                    <p class="card-text text-muted">Sem descrição</p>
+                                <?php endif; ?>
+                            </div>
+                            <div class="card-footer">
+                                <small class="text-muted">
+                                    Criada em <?= date('d/m/Y', strtotime($category->created_at)) ?>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Lista Detalhada</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>Cor</th>
+                                            <th>Descrição</th>
+                                            <th>Criada em</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($categories as $category): ?>
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="color-indicator mr-2" 
+                                                             style="width: 20px; height: 20px; background-color: <?= $this->escapeHtml($category->color) ?>; border-radius: 3px;"></div>
+                                                        <strong><?= $this->escapeHtml($category->name) ?></strong>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge" style="background-color: <?= $this->escapeHtml($category->color) ?>; color: white;">
+                                                        <?= $this->escapeHtml($category->color) ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <?php if ($category->description): ?>
+                                                        <?= $this->escapeHtml(substr($category->description, 0, 80)) ?><?= strlen($category->description) > 80 ? '...' : '' ?>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">Sem descrição</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td><?= date('d/m/Y H:i', strtotime($category->created_at)) ?></td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="<?= $this->url('category', ['action' => 'view', 'id' => $category->id]) ?>" 
+                                                           class="btn btn-sm btn-outline-info" title="Visualizar">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="<?= $this->url('category', ['action' => 'edit', 'id' => $category->id]) ?>" 
+                                                           class="btn btn-sm btn-outline-primary" title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <a href="<?= $this->url('category', ['action' => 'delete', 'id' => $category->id]) ?>" 
+                                                           class="btn btn-sm btn-outline-danger" title="Excluir">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
