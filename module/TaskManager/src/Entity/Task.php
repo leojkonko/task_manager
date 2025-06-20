@@ -12,7 +12,7 @@ use DateTime;
 class Task
 {
     public const STATUS_PENDING = 'pending';
-    public const STATUS_IN_PROGRESS = 'in_progress'; 
+    public const STATUS_IN_PROGRESS = 'in_progress';
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_CANCELLED = 'cancelled';
 
@@ -57,6 +57,20 @@ class Task
 
     public function setTitle(string $title): self
     {
+        $title = trim($title);
+
+        if (empty($title)) {
+            throw new \InvalidArgumentException('O título da tarefa não pode estar vazio');
+        }
+
+        if (strlen($title) < 3) {
+            throw new \InvalidArgumentException('O título deve ter pelo menos 3 caracteres');
+        }
+
+        if (strlen($title) > 200) {
+            throw new \InvalidArgumentException('O título não pode ter mais de 200 caracteres');
+        }
+
         $this->title = $title;
         $this->updateTimestamp();
         return $this;
@@ -69,6 +83,19 @@ class Task
 
     public function setDescription(?string $description): self
     {
+        if ($description !== null) {
+            $description = trim($description);
+
+            if (strlen($description) > 1000) {
+                throw new \InvalidArgumentException('A descrição não pode ter mais de 1000 caracteres');
+            }
+
+            // Se a descrição estiver vazia após o trim, definir como null
+            if (empty($description)) {
+                $description = null;
+            }
+        }
+
         $this->description = $description;
         $this->updateTimestamp();
         return $this;
@@ -91,7 +118,7 @@ class Task
         }
 
         $this->status = $status;
-        
+
         // Se a tarefa for marcada como concluída, definir a data de conclusão
         if ($status === self::STATUS_COMPLETED && $this->completedAt === null) {
             $this->completedAt = new DateTime();

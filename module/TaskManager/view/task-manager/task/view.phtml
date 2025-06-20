@@ -20,14 +20,14 @@ $this->headTitle($title);
                 </div>
                 <div class="card-body">
                     <h4 class="mb-3"><?= $this->escapeHtml($task['title']) ?></h4>
-                    
+
                     <?php if ($task['description']): ?>
                         <div class="mb-3">
                             <h6>Descrição:</h6>
                             <p class="text-muted"><?= nl2br($this->escapeHtml($task['description'])) ?></p>
                         </div>
                     <?php endif; ?>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -46,7 +46,7 @@ $this->headTitle($title);
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -61,12 +61,12 @@ $this->headTitle($title);
                             </div>
                         </div>
                     </div>
-                    
+
                     <?php if ($task['due_date']): ?>
                         <div class="mb-3">
                             <h6>Data de Vencimento:</h6>
                             <p class="text-muted <?= $task['is_overdue'] ? 'text-danger' : '' ?>">
-                                <i class="fas fa-calendar"></i> 
+                                <i class="fas fa-calendar"></i>
                                 <?= date('d/m/Y H:i', strtotime($task['due_date'])) ?>
                                 <?php if ($task['is_overdue']): ?>
                                     <span class="badge bg-danger ms-2">Vencida</span>
@@ -74,12 +74,12 @@ $this->headTitle($title);
                             </p>
                         </div>
                     <?php endif; ?>
-                    
+
                     <?php if ($task['completed_at']): ?>
                         <div class="mb-3">
                             <h6>Data de Conclusão:</h6>
                             <p class="text-success">
-                                <i class="fas fa-check-circle"></i> 
+                                <i class="fas fa-check-circle"></i>
                                 <?= date('d/m/Y H:i', strtotime($task['completed_at'])) ?>
                             </p>
                         </div>
@@ -91,25 +91,25 @@ $this->headTitle($title);
                             <i class="fas fa-arrow-left"></i> Voltar
                         </a>
                         <div>
-                            <a href="<?= $this->url('task-manager/edit', ['id' => $task['id']]) ?>" 
-                               class="btn btn-outline-primary me-2">
+                            <a href="<?= $this->url('task-manager/edit', ['id' => $task['id']]) ?>"
+                                class="btn btn-outline-primary me-2">
                                 <i class="fas fa-edit"></i> Editar
                             </a>
-                            
+
                             <?php if (!$task['is_completed']): ?>
-                                <button type="button" class="btn btn-success me-2" 
-                                        onclick="completeTask(<?= $task['id'] ?>)">
+                                <button type="button" class="btn btn-success me-2"
+                                    onclick="completeTask(<?= $task['id'] ?>)">
                                     <i class="fas fa-check"></i> Marcar como Concluída
                                 </button>
                             <?php endif; ?>
-                            
-                            <button type="button" class="btn btn-info me-2" 
-                                    onclick="duplicateTask(<?= $task['id'] ?>)">
+
+                            <button type="button" class="btn btn-info me-2"
+                                onclick="duplicateTask(<?= $task['id'] ?>)">
                                 <i class="fas fa-copy"></i> Duplicar
                             </button>
-                            
-                            <button type="button" class="btn btn-danger" 
-                                    onclick="deleteTask(<?= $task['id'] ?>)">
+
+                            <button type="button" class="btn btn-danger"
+                                onclick="deleteTask(<?= $task['id'] ?>)">
                                 <i class="fas fa-trash"></i> Excluir
                             </button>
                         </div>
@@ -121,71 +121,71 @@ $this->headTitle($title);
 </div>
 
 <script>
-function completeTask(id) {
-    if (confirm('Marcar esta tarefa como concluída?')) {
-        fetch(`/tasks/complete/${id}`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Erro: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('Erro ao completar tarefa');
-        });
+    function completeTask(id) {
+        if (confirm('Marcar esta tarefa como concluída?')) {
+            fetch(`/tasks/complete/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Erro: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Erro ao completar tarefa');
+                });
+        }
     }
-}
 
-function duplicateTask(id) {
-    if (confirm('Duplicar esta tarefa?')) {
-        fetch(`/tasks/duplicate/${id}`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Tarefa duplicada com sucesso!');
-                window.location.href = '/tasks';
-            } else {
-                alert('Erro: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('Erro ao duplicar tarefa');
-        });
+    function duplicateTask(id) {
+        if (confirm('Duplicar esta tarefa?')) {
+            fetch(`/tasks/duplicate/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Tarefa duplicada com sucesso!');
+                        window.location.href = '/tasks';
+                    } else {
+                        alert('Erro: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Erro ao duplicar tarefa');
+                });
+        }
     }
-}
 
-function deleteTask(id) {
-    if (confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
-        fetch(`/tasks/delete/${id}`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Tarefa excluída com sucesso!');
-                window.location.href = '/tasks';
-            } else {
-                alert('Erro: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('Erro ao excluir tarefa');
-        });
+    function deleteTask(id) {
+        if (confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
+            fetch(`/tasks/delete/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Tarefa excluída com sucesso!');
+                        window.location.href = '/tasks';
+                    } else {
+                        alert('Erro: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Erro ao excluir tarefa');
+                });
+        }
     }
-}
 </script>

@@ -20,10 +20,10 @@ class TaskForm extends Form
     public function __construct($name = null)
     {
         parent::__construct('task-form');
-        
+
         $this->setAttribute('method', 'post');
         $this->setAttribute('class', 'form-horizontal');
-        
+
         $this->addElements();
         $this->setInputFilter($this->createInputFilter());
     }
@@ -207,8 +207,17 @@ class TaskForm extends Form
                         'min' => 3,
                         'max' => 200,
                         'messages' => [
-                            Validator\StringLength::TOO_SHORT => 'O título deve ter pelo menos %min% caracteres',
-                            Validator\StringLength::TOO_LONG => 'O título deve ter no máximo %max% caracteres',
+                            Validator\StringLength::TOO_SHORT => 'O título deve ter pelo menos 3 caracteres',
+                            Validator\StringLength::TOO_LONG => 'O título não pode ter mais de 200 caracteres',
+                        ],
+                    ],
+                ],
+                [
+                    'name' => Validator\Regex::class,
+                    'options' => [
+                        'pattern' => '/^[a-zA-Z0-9\s\-_.,!?áéíóúàèìòùâêîôûãõçÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ]+$/u',
+                        'messages' => [
+                            Validator\Regex::NOT_MATCH => 'O título contém caracteres inválidos',
                         ],
                     ],
                 ],
@@ -347,7 +356,7 @@ class TaskForm extends Form
     public function getTaskData(): array
     {
         $data = $this->getData();
-        
+
         // Converter data se fornecida
         if (!empty($data['due_date'])) {
             $data['due_date'] = $data['due_date'];

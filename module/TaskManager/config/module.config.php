@@ -117,6 +117,126 @@ return [
                     ],
                 ],
             ],
+            'api' => [
+                'type'    => Literal::class,
+                'options' => [
+                    'route'    => '/api',
+                    'defaults' => [
+                        'controller' => Controller\ApiController::class,
+                    ],
+                ],
+                'may_terminate' => false,
+                'child_routes' => [
+                    'tasks' => [
+                        'type' => Literal::class,
+                        'options' => [
+                            'route' => '/tasks',
+                        ],
+                        'may_terminate' => false,
+                        'child_routes' => [
+                            'create' => [
+                                'type' => Literal::class,
+                                'options' => [
+                                    'route' => '/create',
+                                    'defaults' => [
+                                        'action' => 'create',
+                                    ],
+                                ],
+                            ],
+                            'list' => [
+                                'type' => Literal::class,
+                                'options' => [
+                                    'route' => '/list',
+                                    'defaults' => [
+                                        'action' => 'list',
+                                    ],
+                                ],
+                            ],
+                            'update' => [
+                                'type' => Segment::class,
+                                'options' => [
+                                    'route' => '/update/[:id]',
+                                    'constraints' => [
+                                        'id' => '[0-9]+',
+                                    ],
+                                    'defaults' => [
+                                        'action' => 'update',
+                                    ],
+                                ],
+                            ],
+                            'delete' => [
+                                'type' => Segment::class,
+                                'options' => [
+                                    'route' => '/delete/[:id]',
+                                    'constraints' => [
+                                        'id' => '[0-9]+',
+                                    ],
+                                    'defaults' => [
+                                        'action' => 'delete',
+                                    ],
+                                ],
+                            ],
+                            'get' => [
+                                'type' => Segment::class,
+                                'options' => [
+                                    'route' => '/[:id]',
+                                    'constraints' => [
+                                        'id' => '[0-9]+',
+                                    ],
+                                    'defaults' => [
+                                        'action' => 'get',
+                                    ],
+                                ],
+                            ],
+                            'complete' => [
+                                'type' => Segment::class,
+                                'options' => [
+                                    'route' => '/complete/[:id]',
+                                    'constraints' => [
+                                        'id' => '[0-9]+',
+                                    ],
+                                    'defaults' => [
+                                        'action' => 'complete',
+                                    ],
+                                ],
+                            ],
+                            'start' => [
+                                'type' => Segment::class,
+                                'options' => [
+                                    'route' => '/start/[:id]',
+                                    'constraints' => [
+                                        'id' => '[0-9]+',
+                                    ],
+                                    'defaults' => [
+                                        'action' => 'start',
+                                    ],
+                                ],
+                            ],
+                            'duplicate' => [
+                                'type' => Segment::class,
+                                'options' => [
+                                    'route' => '/duplicate/[:id]',
+                                    'constraints' => [
+                                        'id' => '[0-9]+',
+                                    ],
+                                    'defaults' => [
+                                        'action' => 'duplicate',
+                                    ],
+                                ],
+                            ],
+                            'statistics' => [
+                                'type' => Literal::class,
+                                'options' => [
+                                    'route' => '/statistics',
+                                    'defaults' => [
+                                        'action' => 'statistics',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
         ],
     ],
 
@@ -127,20 +247,23 @@ return [
                     $container->get(Service\TaskService::class)
                 );
             },
+            Controller\ApiController::class => function ($container) {
+                return new Controller\ApiController(
+                    $container->get(Service\TaskService::class)
+                );
+            },
         ],
     ],
 
     'service_manager' => [
         'factories' => [
             Service\TaskService::class => function ($container) {
-                return new Service\TaskService(
-                    $container->get(Repository\TaskRepository::class)
-                );
+                $taskRepository = $container->get(Repository\TaskRepository::class);
+                return new Service\TaskService($taskRepository);
             },
             Repository\TaskRepository::class => function ($container) {
-                return new Repository\TaskRepository(
-                    $container->get(Model\TaskTable::class)
-                );
+                $taskTable = $container->get(Model\TaskTable::class);
+                return new Repository\TaskRepository($taskTable);
             },
             Model\TaskTable::class => function ($container) {
                 $tableGateway = $container->get(Model\TaskTableGateway::class);
@@ -152,6 +275,12 @@ return [
                 $resultSetPrototype->setArrayObjectPrototype(new ArrayObject());
                 return new TableGateway('tasks', $dbAdapter, null, $resultSetPrototype);
             },
+            Middleware\TaskValidationMiddleware::class => function ($container) {
+                return new Middleware\TaskValidationMiddleware();
+            },
+            Exception\ValidationExceptionHandler::class => function ($container) {
+                return new Exception\ValidationExceptionHandler();
+            },
         ],
     ],
 
@@ -161,10 +290,10 @@ return [
             'getPriorityBadgeClass' => View\Helper\GetPriorityBadgeClass::class,
         ],
         'factories' => [
-            View\Helper\GetStatusBadgeClass::class => function() {
+            View\Helper\GetStatusBadgeClass::class => function () {
                 return new View\Helper\GetStatusBadgeClass();
             },
-            View\Helper\GetPriorityBadgeClass::class => function() {
+            View\Helper\GetPriorityBadgeClass::class => function () {
                 return new View\Helper\GetPriorityBadgeClass();
             },
         ],
@@ -174,5 +303,15 @@ return [
         'template_path_stack' => [
             'task-manager' => __DIR__ . '/../view',
         ],
+        'strategies' => [
+            'ViewJsonStrategy',
+        ],
+        'template_map' => [
+            // Mapear templates para evitar erro de resolução
+        ],
+        'display_not_found_reason' => true,
+        'display_exceptions' => true,
+        'not_found_template' => 'error/404',
+        'exception_template' => 'error/index',
     ],
 ];

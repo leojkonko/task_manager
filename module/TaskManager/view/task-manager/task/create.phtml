@@ -96,50 +96,50 @@ $this->headTitle($title);
 </div>
 
 <script>
-// Validação client-side adicional
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('task-form');
-    const titleInput = document.getElementById('title');
-    
-    form.addEventListener('submit', function(e) {
-        let isValid = true;
-        
-        // Validar título
-        if (titleInput.value.trim().length < 3) {
-            isValid = false;
-            titleInput.classList.add('is-invalid');
-            showFieldError(titleInput, 'O título deve ter pelo menos 3 caracteres');
-        } else {
-            titleInput.classList.remove('is-invalid');
-            hideFieldError(titleInput);
-        }
-        
-        if (!isValid) {
-            e.preventDefault();
-        }
-    });
-    
-    // Remover erro ao digitar
-    titleInput.addEventListener('input', function() {
-        if (this.value.trim().length >= 3) {
-            this.classList.remove('is-invalid');
-            hideFieldError(this);
-        }
-    });
-});
+    // Validação client-side adicional
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('task-form');
+        const titleInput = document.getElementById('title');
 
-function showFieldError(field, message) {
-    hideFieldError(field);
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'invalid-feedback';
-    errorDiv.textContent = message;
-    field.parentNode.appendChild(errorDiv);
-}
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
 
-function hideFieldError(field) {
-    const errorDiv = field.parentNode.querySelector('.invalid-feedback');
-    if (errorDiv) {
-        errorDiv.remove();
+            // Validar título
+            if (titleInput.value.trim().length < 3) {
+                isValid = false;
+                titleInput.classList.add('is-invalid');
+                showFieldError(titleInput, 'O título deve ter pelo menos 3 caracteres');
+            } else {
+                titleInput.classList.remove('is-invalid');
+                hideFieldError(titleInput);
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+
+        // Remover erro ao digitar
+        titleInput.addEventListener('input', function() {
+            if (this.value.trim().length >= 3) {
+                this.classList.remove('is-invalid');
+                hideFieldError(this);
+            }
+        });
+    });
+
+    function showFieldError(field, message) {
+        hideFieldError(field);
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'invalid-feedback';
+        errorDiv.textContent = message;
+        field.parentNode.appendChild(errorDiv);
     }
-}
+
+    function hideFieldError(field) {
+        const errorDiv = field.parentNode.querySelector('.invalid-feedback');
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+    }
 </script>

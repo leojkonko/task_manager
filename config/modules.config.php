@@ -11,6 +11,7 @@ return [
     'Laminas\Db',
     'Laminas\Router',
     'Laminas\Validator',
+    'Laminas\Form', // Added this line to enable form view helpers
     'Application',
     'TaskManager',
 ];

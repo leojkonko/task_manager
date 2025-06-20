@@ -30,7 +30,7 @@ class TaskTable
     {
         $select = $this->tableGateway->getSql()->select();
         $select->where(['user_id' => $userId])
-               ->order('created_at DESC');
+            ->order('created_at DESC');
 
         $resultSet = $this->tableGateway->selectWith($select);
         return $this->resultSetToTaskArray($resultSet);
@@ -43,7 +43,7 @@ class TaskTable
     {
         $select = $this->tableGateway->getSql()->select();
         $countSelect = $this->tableGateway->getSql()->select();
-        
+
         // Aplicar filtros
         $where = $this->buildWhereClause($userId, $filters);
         $select->where($where);
@@ -82,7 +82,7 @@ class TaskTable
     {
         $rowset = $this->tableGateway->select(['id' => $id]);
         $row = $rowset->current();
-        
+
         if (!$row) {
             return null;
         }
@@ -101,7 +101,7 @@ class TaskTable
             // Update
             $data['updated_at'] = date('Y-m-d H:i:s');
             unset($data['id'], $data['created_at']);
-            
+
             $this->tableGateway->update($data, ['id' => $task->getId()]);
         } else {
             // Insert
@@ -109,9 +109,9 @@ class TaskTable
             $data['created_at'] = $now;
             $data['updated_at'] = $now;
             unset($data['id']);
-            
+
             $this->tableGateway->insert($data);
-            $task->setId($this->tableGateway->getLastInsertValue());
+            $task->setId((int) $this->tableGateway->getLastInsertValue());
         }
 
         return $this->getTask($task->getId());
@@ -151,17 +151,17 @@ class TaskTable
         // Total de tarefas
         $totalSelect = $this->tableGateway->getSql()->select();
         $totalSelect->where(['user_id' => $userId])
-                   ->columns(['total' => new Expression('COUNT(*)')]);
+            ->columns(['total' => new Expression('COUNT(*)')]);
         $totalResult = $this->tableGateway->selectWith($totalSelect);
         $total = $totalResult->current()['total'];
 
         // Tarefas por status
         $statusSelect = $this->tableGateway->getSql()->select();
         $statusSelect->where(['user_id' => $userId])
-                    ->columns(['status', 'count' => new Expression('COUNT(*)')])
-                    ->group('status');
+            ->columns(['status', 'count' => new Expression('COUNT(*)')])
+            ->group('status');
         $statusResult = $this->tableGateway->selectWith($statusSelect);
-        
+
         $byStatus = [];
         foreach ($statusResult as $row) {
             $byStatus[$row['status']] = (int)$row['count'];
@@ -219,12 +219,12 @@ class TaskTable
     {
         $task = new Task();
         $task->setId($data['id'])
-             ->setTitle($data['title'])
-             ->setDescription($data['description'])
-             ->setStatus($data['status'])
-             ->setPriority($data['priority'])
-             ->setUserId($data['user_id'])
-             ->setCategoryId($data['category_id']);
+            ->setTitle($data['title'])
+            ->setDescription($data['description'])
+            ->setStatus($data['status'])
+            ->setPriority($data['priority'])
+            ->setUserId($data['user_id'])
+            ->setCategoryId($data['category_id']);
 
         if ($data['due_date']) {
             $task->setDueDate(new DateTime($data['due_date']));

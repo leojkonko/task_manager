@@ -7,6 +7,7 @@ namespace TaskManager\Controller;
 use TaskManager\Service\TaskService;
 use TaskManager\Entity\Task;
 use TaskManager\Form\TaskForm;
+use TaskManager\Validator\TaskBackendValidator;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
@@ -35,7 +36,7 @@ class TaskController extends AbstractActionController
 
         $page = (int) $this->params()->fromQuery('page', 1);
         $limit = (int) $this->params()->fromQuery('limit', 10);
-        
+
         $filters = [
             'status' => $this->params()->fromQuery('status'),
             'priority' => $this->params()->fromQuery('priority'),
@@ -46,7 +47,7 @@ class TaskController extends AbstractActionController
         ];
 
         // Remover filtros vazios
-        $filters = array_filter($filters, function($value) {
+        $filters = array_filter($filters, function ($value) {
             return $value !== null && $value !== '';
         });
 
@@ -58,7 +59,7 @@ class TaskController extends AbstractActionController
             return new JsonModel([
                 'success' => true,
                 'data' => [
-                    'tasks' => array_map(function($task) {
+                    'tasks' => array_map(function ($task) {
                         return $task->toArray();
                     }, $result['tasks']),
                     'pagination' => [
@@ -72,7 +73,7 @@ class TaskController extends AbstractActionController
         }
 
         // Converter tasks para array para a view
-        $tasks = array_map(function($task) {
+        $tasks = array_map(function ($task) {
             return $task->toArray();
         }, $result['tasks']);
 
@@ -96,13 +97,13 @@ class TaskController extends AbstractActionController
     public function viewAction()
     {
         $id = (int) $this->params()->fromRoute('id', 0);
-        
+
         if (!$id) {
             return $this->redirect()->toRoute('task-manager');
         }
 
         $task = $this->taskService->getTaskById($id);
-        
+
         if (!$task) {
             $request = $this->getRequest();
             if ($request instanceof Request && $request->getHeader('X-Requested-With')) {
@@ -111,7 +112,7 @@ class TaskController extends AbstractActionController
                     'message' => 'Tarefa não encontrada'
                 ]);
             }
-            
+
             $this->flashMessenger()->addErrorMessage('Tarefa não encontrada');
             return $this->redirect()->toRoute('task-manager');
         }
@@ -138,23 +139,61 @@ class TaskController extends AbstractActionController
     {
         $form = new TaskForm();
         $form->get('submit')->setValue('Criar Tarefa');
-        
+
         // Definir valores padrão
         $form->get('status')->setValue(Task::STATUS_PENDING);
         $form->get('priority')->setValue(Task::PRIORITY_MEDIUM);
 
         $request = $this->getRequest();
-        
+
         if ($request instanceof Request && $request->isPost()) {
-            $form->setData($request->getPost());
-            
+            $postData = $request->getPost()->toArray();
+
+            // Primeiro: sanitizar dados de entrada
+            $sanitizedData = TaskBackendValidator::sanitize($postData);
+
+            // Segundo: validar dados no backend
+            $validationErrors = TaskBackendValidator::validate($sanitizedData, true);
+
+            if (!empty($validationErrors)) {
+                // Se há erros de validação, retornar resposta apropriada
+                if ($request->getHeader('X-Requested-With')) {
+                    return new JsonModel([
+                        'success' => false,
+                        'message' => 'Dados inválidos fornecidos',
+                        'errors' => $validationErrors
+                    ]);
+                }
+
+                // Para requisições normais, adicionar erros ao formulário
+                foreach ($validationErrors as $field => $fieldErrors) {
+                    foreach ($fieldErrors as $error) {
+                        $this->flashMessenger()->addErrorMessage($error);
+                    }
+                }
+
+                $form->setData($sanitizedData);
+                return new ViewModel([
+                    'form' => $form,
+                    'validationErrors' => $validationErrors,
+                    'availableStatuses' => Task::getAvailableStatuses(),
+                    'availablePriorities' => Task::getAvailablePriorities(),
+                ]);
+            }
+
+            // Dados válidos: continuar com validação do formulário Laminas
+            $form->setData($sanitizedData);
+
             if ($form->isValid()) {
                 try {
                     $data = $form->getTaskData();
                     $data['user_id'] = 1; // Usuário fixo para teste
-                    
+
+                    // Validação final antes de criar
+                    TaskBackendValidator::validateAndThrow($data, true);
+
                     $task = $this->taskService->createTask($data);
-                    
+
                     if ($request->getHeader('X-Requested-With')) {
                         return new JsonModel([
                             'success' => true,
@@ -162,10 +201,9 @@ class TaskController extends AbstractActionController
                             'data' => $task->toArray()
                         ]);
                     }
-                    
+
                     $this->flashMessenger()->addSuccessMessage('Tarefa criada com sucesso');
                     return $this->redirect()->toRoute('task-manager/view', ['id' => $task->getId()]);
-                    
                 } catch (\Exception $e) {
                     if ($request->getHeader('X-Requested-With')) {
                         return new JsonModel([
@@ -173,7 +211,7 @@ class TaskController extends AbstractActionController
                             'message' => $e->getMessage()
                         ]);
                     }
-                    
+
                     $this->flashMessenger()->addErrorMessage($e->getMessage());
                 }
             } else {
@@ -183,7 +221,7 @@ class TaskController extends AbstractActionController
                     foreach ($form->getMessages() as $field => $fieldErrors) {
                         $errors[$field] = array_values($fieldErrors);
                     }
-                    
+
                     return new JsonModel([
                         'success' => false,
                         'message' => 'Dados do formulário inválidos',
@@ -206,13 +244,13 @@ class TaskController extends AbstractActionController
     public function editAction()
     {
         $id = (int) $this->params()->fromRoute('id', 0);
-        
+
         if (!$id) {
             return $this->redirect()->toRoute('task-manager');
         }
 
         $task = $this->taskService->getTaskById($id);
-        
+
         if (!$task) {
             $this->flashMessenger()->addErrorMessage('Tarefa não encontrada');
             return $this->redirect()->toRoute('task-manager');
@@ -223,15 +261,54 @@ class TaskController extends AbstractActionController
         $form->populateFromTask($task);
 
         $request = $this->getRequest();
-        
+
         if ($request instanceof Request && $request->isPost()) {
-            $form->setData($request->getPost());
-            
+            $postData = $request->getPost()->toArray();
+
+            // Primeiro: sanitizar dados de entrada
+            $sanitizedData = TaskBackendValidator::sanitize($postData);
+
+            // Segundo: validar dados no backend (não é criação, então isCreate = false)
+            $validationErrors = TaskBackendValidator::validate($sanitizedData, false);
+
+            if (!empty($validationErrors)) {
+                // Se há erros de validação, retornar resposta apropriada
+                if ($request->getHeader('X-Requested-With')) {
+                    return new JsonModel([
+                        'success' => false,
+                        'message' => 'Dados inválidos fornecidos',
+                        'errors' => $validationErrors
+                    ]);
+                }
+
+                // Para requisições normais, adicionar erros ao formulário
+                foreach ($validationErrors as $field => $fieldErrors) {
+                    foreach ($fieldErrors as $error) {
+                        $this->flashMessenger()->addErrorMessage($error);
+                    }
+                }
+
+                $form->setData($sanitizedData);
+                return new ViewModel([
+                    'form' => $form,
+                    'task' => $task->toArray(),
+                    'validationErrors' => $validationErrors,
+                    'availableStatuses' => Task::getAvailableStatuses(),
+                    'availablePriorities' => Task::getAvailablePriorities(),
+                ]);
+            }
+
+            $form->setData($sanitizedData);
+
             if ($form->isValid()) {
                 try {
                     $data = $form->getTaskData();
+
+                    // Validação final antes de atualizar
+                    TaskBackendValidator::validateAndThrow($data, false);
+
                     $updatedTask = $this->taskService->updateTask($id, $data);
-                    
+
                     if ($request->getHeader('X-Requested-With')) {
                         return new JsonModel([
                             'success' => true,
@@ -239,10 +316,9 @@ class TaskController extends AbstractActionController
                             'data' => $updatedTask->toArray()
                         ]);
                     }
-                    
+
                     $this->flashMessenger()->addSuccessMessage('Tarefa atualizada com sucesso');
                     return $this->redirect()->toRoute('task-manager/view', ['id' => $id]);
-                    
                 } catch (\Exception $e) {
                     if ($request->getHeader('X-Requested-With')) {
                         return new JsonModel([
@@ -250,7 +326,7 @@ class TaskController extends AbstractActionController
                             'message' => $e->getMessage()
                         ]);
                     }
-                    
+
                     $this->flashMessenger()->addErrorMessage($e->getMessage());
                 }
             } else {
@@ -260,7 +336,7 @@ class TaskController extends AbstractActionController
                     foreach ($form->getMessages() as $field => $fieldErrors) {
                         $errors[$field] = array_values($fieldErrors);
                     }
-                    
+
                     return new JsonModel([
                         'success' => false,
                         'message' => 'Dados do formulário inválidos',
@@ -284,7 +360,7 @@ class TaskController extends AbstractActionController
     public function deleteAction()
     {
         $id = (int) $this->params()->fromRoute('id', 0);
-        
+
         if (!$id) {
             $request = $this->getRequest();
             if ($request instanceof Request && $request->getHeader('X-Requested-With')) {
@@ -306,17 +382,17 @@ class TaskController extends AbstractActionController
                     'message' => 'Tarefa não encontrada'
                 ]);
             }
-            
+
             $this->flashMessenger()->addErrorMessage('Tarefa não encontrada');
             return $this->redirect()->toRoute('task-manager');
         }
 
         $request = $this->getRequest();
-        
+
         if ($request instanceof Request && $request->isPost()) {
             try {
                 $deleted = $this->taskService->deleteTask($id);
-                
+
                 if ($deleted) {
                     if ($request->getHeader('X-Requested-With')) {
                         return new JsonModel([
@@ -324,7 +400,7 @@ class TaskController extends AbstractActionController
                             'message' => 'Tarefa excluída com sucesso'
                         ]);
                     }
-                    
+
                     $this->flashMessenger()->addSuccessMessage('Tarefa excluída com sucesso');
                 } else {
                     if ($request->getHeader('X-Requested-With')) {
@@ -333,7 +409,7 @@ class TaskController extends AbstractActionController
                             'message' => 'Erro ao excluir tarefa'
                         ]);
                     }
-                    
+
                     $this->flashMessenger()->addErrorMessage('Erro ao excluir tarefa');
                 }
             } catch (\Exception $e) {
@@ -343,10 +419,10 @@ class TaskController extends AbstractActionController
                         'message' => 'Erro interno do servidor'
                     ]);
                 }
-                
+
                 $this->flashMessenger()->addErrorMessage('Erro ao excluir tarefa');
             }
-            
+
             return $this->redirect()->toRoute('task-manager');
         }
 
@@ -361,7 +437,7 @@ class TaskController extends AbstractActionController
     public function completeAction()
     {
         $id = (int) $this->params()->fromRoute('id', 0);
-        
+
         if (!$id) {
             return new JsonModel([
                 'success' => false,
@@ -371,7 +447,7 @@ class TaskController extends AbstractActionController
 
         try {
             $task = $this->taskService->completeTask($id);
-            
+
             if ($task) {
                 return new JsonModel([
                     'success' => true,
@@ -398,7 +474,7 @@ class TaskController extends AbstractActionController
     public function startAction()
     {
         $id = (int) $this->params()->fromRoute('id', 0);
-        
+
         if (!$id) {
             return new JsonModel([
                 'success' => false,
@@ -408,7 +484,7 @@ class TaskController extends AbstractActionController
 
         try {
             $task = $this->taskService->startTask($id);
-            
+
             if ($task) {
                 return new JsonModel([
                     'success' => true,
@@ -435,7 +511,7 @@ class TaskController extends AbstractActionController
     public function duplicateAction()
     {
         $id = (int) $this->params()->fromRoute('id', 0);
-        
+
         if (!$id) {
             return new JsonModel([
                 'success' => false,
@@ -445,7 +521,7 @@ class TaskController extends AbstractActionController
 
         try {
             $task = $this->taskService->duplicateTask($id);
-            
+
             if ($task) {
                 return new JsonModel([
                     'success' => true,
@@ -478,7 +554,7 @@ class TaskController extends AbstractActionController
             $overdueTasks = $this->taskService->getOverdueTasks($userId);
 
             $data = array_merge($statistics, [
-                'overdue_tasks' => array_map(function($task) {
+                'overdue_tasks' => array_map(function ($task) {
                     return $task->toArray();
                 }, $overdueTasks)
             ]);

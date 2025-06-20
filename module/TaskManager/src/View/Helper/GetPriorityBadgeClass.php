@@ -13,7 +13,7 @@ class GetPriorityBadgeClass extends AbstractHelper
 {
     public function __invoke(string $priority): string
     {
-        return match($priority) {
+        return match ($priority) {
             'low' => 'bg-info',
             'medium' => 'bg-secondary',
             'high' => 'bg-warning text-dark',

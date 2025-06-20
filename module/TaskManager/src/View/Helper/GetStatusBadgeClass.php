@@ -13,7 +13,7 @@ class GetStatusBadgeClass extends AbstractHelper
 {
     public function __invoke(string $status): string
     {
-        return match($status) {
+        return match ($status) {
             'pending' => 'bg-warning text-dark',
             'in_progress' => 'bg-primary',
             'completed' => 'bg-success',

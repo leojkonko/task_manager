@@ -1,0 +1,300 @@
+<?php
+
+declare(strict_types=1);
+
+namespace TaskManager\Validator;
+
+use DateTime;
+use InvalidArgumentException;
+
+/**
+ * Validador backend para dados de tarefas
+ * Garante que todas as validações sejam aplicadas independentemente da origem da requisição
+ */
+class TaskBackendValidator
+{
+    /**
+     * Valida dados de tarefa antes de criar ou atualizar
+     */
+    public static function validate(array $data, bool $isCreate = true): array
+    {
+        $errors = [];
+
+        // Validação específica para criação de tarefas
+        if ($isCreate) {
+            // Verificar se está tentando criar tarefa durante dias úteis
+            $weekdayErrors = self::validateWeekdayCreation();
+            if (!empty($weekdayErrors)) {
+                $errors['creation_time'] = $weekdayErrors;
+            }
+        }
+
+        // Validação do título
+        $titleErrors = self::validateTitle($data['title'] ?? null, $isCreate);
+        if (!empty($titleErrors)) {
+            $errors['title'] = $titleErrors;
+        }
+
+        // Validação da descrição
+        $descriptionErrors = self::validateDescription($data['description'] ?? null);
+        if (!empty($descriptionErrors)) {
+            $errors['description'] = $descriptionErrors;
+        }
+
+        // Validação do status
+        $statusErrors = self::validateStatus($data['status'] ?? null);
+        if (!empty($statusErrors)) {
+            $errors['status'] = $statusErrors;
+        }
+
+        // Validação da prioridade
+        $priorityErrors = self::validatePriority($data['priority'] ?? null);
+        if (!empty($priorityErrors)) {
+            $errors['priority'] = $priorityErrors;
+        }
+
+        // Validação da data de vencimento
+        $dueDateErrors = self::validateDueDate($data['due_date'] ?? null, $isCreate);
+        if (!empty($dueDateErrors)) {
+            $errors['due_date'] = $dueDateErrors;
+        }
+
+        // Validação do user_id
+        $userIdErrors = self::validateUserId($data['user_id'] ?? null, $isCreate);
+        if (!empty($userIdErrors)) {
+            $errors['user_id'] = $userIdErrors;
+        }
+
+        // Validação do category_id
+        $categoryIdErrors = self::validateCategoryId($data['category_id'] ?? null);
+        if (!empty($categoryIdErrors)) {
+            $errors['category_id'] = $categoryIdErrors;
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida o título da tarefa
+     */
+    private static function validateTitle(?string $title, bool $isCreate): array
+    {
+        $errors = [];
+
+        if ($isCreate && (empty($title) || trim($title) === '')) {
+            $errors[] = 'O título da tarefa é obrigatório';
+            return $errors;
+        }
+
+        if ($title !== null) {
+            $title = trim($title);
+
+            if (empty($title)) {
+                $errors[] = 'O título da tarefa não pode estar vazio';
+            } elseif (strlen($title) < 3) {
+                $errors[] = 'O título deve ter pelo menos 3 caracteres';
+            } elseif (strlen($title) > 200) {
+                $errors[] = 'O título não pode ter mais de 200 caracteres';
+            } elseif (!preg_match('/^[a-zA-Z0-9\s\-_.,!?áéíóúàèìòùâêîôûãõçÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ]+$/u', $title)) {
+                $errors[] = 'O título contém caracteres inválidos. Use apenas letras, números, espaços e pontuação básica';
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida a descrição da tarefa
+     */
+    private static function validateDescription(?string $description): array
+    {
+        $errors = [];
+
+        if ($description !== null && strlen($description) > 1000) {
+            $errors[] = 'A descrição não pode ter mais de 1000 caracteres';
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida o status da tarefa
+     */
+    private static function validateStatus(?string $status): array
+    {
+        $errors = [];
+
+        if ($status !== null) {
+            $validStatuses = ['pending', 'in_progress', 'completed', 'cancelled'];
+            if (!in_array($status, $validStatuses)) {
+                $errors[] = 'Status inválido. Valores aceitos: ' . implode(', ', $validStatuses);
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida a prioridade da tarefa
+     */
+    private static function validatePriority(?string $priority): array
+    {
+        $errors = [];
+
+        if ($priority !== null) {
+            $validPriorities = ['low', 'medium', 'high', 'urgent'];
+            if (!in_array($priority, $validPriorities)) {
+                $errors[] = 'Prioridade inválida. Valores aceitos: ' . implode(', ', $validPriorities);
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida a data de vencimento
+     */
+    private static function validateDueDate(?string $dueDate, bool $isCreate): array
+    {
+        $errors = [];
+
+        if ($dueDate !== null && !empty($dueDate)) {
+            // Verificar se a data é válida
+            if (!self::isValidDateTime($dueDate)) {
+                $errors[] = 'Data de vencimento inválida. Use o formato Y-m-d H:i:s ou Y-m-d\\TH:i';
+                return $errors;
+            }
+
+            // Verificar se a data não é no passado (apenas para criação)
+            if ($isCreate) {
+                try {
+                    $dueDateObj = new DateTime($dueDate);
+                    $now = new DateTime();
+                    if ($dueDateObj < $now) {
+                        $errors[] = 'A data de vencimento não pode ser no passado';
+                    }
+                } catch (\Exception $e) {
+                    $errors[] = 'Data de vencimento inválida';
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida o ID do usuário
+     */
+    private static function validateUserId($userId, bool $isCreate): array
+    {
+        $errors = [];
+
+        if ($isCreate && empty($userId)) {
+            $errors[] = 'O ID do usuário é obrigatório';
+            return $errors;
+        }
+
+        if ($userId !== null) {
+            if (!is_numeric($userId) || (int)$userId <= 0) {
+                $errors[] = 'ID do usuário deve ser um número positivo';
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida o ID da categoria
+     */
+    private static function validateCategoryId($categoryId): array
+    {
+        $errors = [];
+
+        if ($categoryId !== null && $categoryId !== '') {
+            if (!is_numeric($categoryId) || (int)$categoryId <= 0) {
+                $errors[] = 'ID da categoria deve ser um número positivo';
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Verifica se uma string é uma data/hora válida
+     */
+    private static function isValidDateTime(string $dateTime): bool
+    {
+        if (DateTime::createFromFormat('Y-m-d H:i:s', $dateTime) !== false) {
+            return true;
+        }
+
+        if (DateTime::createFromFormat('Y-m-d\TH:i', $dateTime) !== false) {
+            return true;
+        }
+
+        if (DateTime::createFromFormat('Y-m-d', $dateTime) !== false) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Sanitiza dados de entrada
+     */
+    public static function sanitize(array $data): array
+    {
+        $sanitized = [];
+
+        foreach ($data as $key => $value) {
+            if (is_string($value)) {
+                // Remove tags HTML
+                $value = strip_tags($value);
+
+                // Remove caracteres de controle
+                $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $value);
+
+                // Trim espaços
+                $value = trim($value);
+            }
+
+            $sanitized[$key] = $value;
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * Lança exceção se houver erros de validação
+     */
+    public static function validateAndThrow(array $data, bool $isCreate = true): void
+    {
+        $errors = self::validate($data, $isCreate);
+
+        if (!empty($errors)) {
+            $errorMessages = [];
+            foreach ($errors as $field => $fieldErrors) {
+                $errorMessages[] = implode(', ', $fieldErrors);
+            }
+
+            throw new InvalidArgumentException('Dados inválidos: ' . implode('; ', $errorMessages));
+        }
+    }
+
+    /**
+     * Valida se a criação da tarefa ocorre em um dia útil
+     */
+    private static function validateWeekdayCreation(): array
+    {
+        $errors = [];
+
+        $currentDay = (new DateTime())->format('N'); // Dia da semana (1 = segunda, 7 = domingo)
+
+        // Verifica se o dia atual é sábado (6) ou domingo (7)
+        if ($currentDay == 6 || $currentDay == 7) {
+            $errors[] = 'Não é permitido criar tarefas durante o fim de semana';
+        }
+
+        return $errors;
+    }
+}

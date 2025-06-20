@@ -22,17 +22,17 @@ $this->headTitle($title);
                     <form method="get" class="row g-3">
                         <div class="col-md-3">
                             <label for="search" class="form-label">Buscar</label>
-                            <input type="text" class="form-control" id="search" name="search" 
-                                   value="<?= $this->escapeHtmlAttr($filters['search'] ?? '') ?>" 
-                                   placeholder="Título da tarefa...">
+                            <input type="text" class="form-control" id="search" name="search"
+                                value="<?= $this->escapeHtmlAttr($filters['search'] ?? '') ?>"
+                                placeholder="Título da tarefa...">
                         </div>
                         <div class="col-md-2">
                             <label for="status" class="form-label">Status</label>
                             <select class="form-select" id="status" name="status">
                                 <option value="">Todos</option>
                                 <?php foreach ($availableStatuses as $key => $label): ?>
-                                    <option value="<?= $this->escapeHtmlAttr($key) ?>" 
-                                            <?= isset($filters['status']) && $filters['status'] === $key ? 'selected' : '' ?>>
+                                    <option value="<?= $this->escapeHtmlAttr($key) ?>"
+                                        <?= isset($filters['status']) && $filters['status'] === $key ? 'selected' : '' ?>>
                                         <?= $this->escapeHtml($label) ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -43,8 +43,8 @@ $this->headTitle($title);
                             <select class="form-select" id="priority" name="priority">
                                 <option value="">Todas</option>
                                 <?php foreach ($availablePriorities as $key => $label): ?>
-                                    <option value="<?= $this->escapeHtmlAttr($key) ?>" 
-                                            <?= isset($filters['priority']) && $filters['priority'] === $key ? 'selected' : '' ?>>
+                                    <option value="<?= $this->escapeHtmlAttr($key) ?>"
+                                        <?= isset($filters['priority']) && $filters['priority'] === $key ? 'selected' : '' ?>>
                                         <?= $this->escapeHtml($label) ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -106,11 +106,11 @@ $this->headTitle($title);
                                     <?php if ($task['description']): ?>
                                         <p class="card-text"><?= $this->escapeHtml(substr($task['description'], 0, 100)) ?><?= strlen($task['description']) > 100 ? '...' : '' ?></p>
                                     <?php endif; ?>
-                                    
+
                                     <?php if ($task['due_date']): ?>
                                         <p class="card-text">
                                             <small class="text-muted">
-                                                <i class="fas fa-calendar"></i> 
+                                                <i class="fas fa-calendar"></i>
                                                 Vence em: <?= date('d/m/Y H:i', strtotime($task['due_date'])) ?>
                                             </small>
                                         </p>
@@ -118,22 +118,22 @@ $this->headTitle($title);
                                 </div>
                                 <div class="card-footer">
                                     <div class="btn-group w-100" role="group">
-                                        <a href="<?= $this->url('task-manager/view', ['id' => $task['id']]) ?>" 
-                                           class="btn btn-outline-primary btn-sm">Ver</a>
-                                        <a href="<?= $this->url('task-manager/edit', ['id' => $task['id']]) ?>" 
-                                           class="btn btn-outline-secondary btn-sm">Editar</a>
-                                        
+                                        <a href="<?= $this->url('task-manager/view', ['id' => $task['id']]) ?>"
+                                            class="btn btn-outline-primary btn-sm">Ver</a>
+                                        <a href="<?= $this->url('task-manager/edit', ['id' => $task['id']]) ?>"
+                                            class="btn btn-outline-secondary btn-sm">Editar</a>
+
                                         <?php if (!$task['is_completed']): ?>
-                                            <button type="button" class="btn btn-outline-success btn-sm" 
-                                                    onclick="completeTask(<?= $task['id'] ?>)">Concluir</button>
+                                            <button type="button" class="btn btn-outline-success btn-sm"
+                                                onclick="completeTask(<?= $task['id'] ?>)">Concluir</button>
                                         <?php endif; ?>
                                     </div>
-                                    
+
                                     <div class="btn-group w-100 mt-1" role="group">
-                                        <button type="button" class="btn btn-outline-info btn-sm" 
-                                                onclick="duplicateTask(<?= $task['id'] ?>)">Duplicar</button>
-                                        <button type="button" class="btn btn-outline-danger btn-sm" 
-                                                onclick="deleteTask(<?= $task['id'] ?>)">Excluir</button>
+                                        <button type="button" class="btn btn-outline-info btn-sm"
+                                            onclick="duplicateTask(<?= $task['id'] ?>)">Duplicar</button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm"
+                                            onclick="deleteTask(<?= $task['id'] ?>)">Excluir</button>
                                     </div>
                                 </div>
                             </div>
@@ -150,13 +150,13 @@ $this->headTitle($title);
                                     <a class="page-link" href="<?= $this->url('task-manager', [], ['query' => array_merge($_GET, ['page' => $pagination['page'] - 1])]) ?>">Anterior</a>
                                 </li>
                             <?php endif; ?>
-                            
+
                             <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
                                 <li class="page-item <?= $i === $pagination['page'] ? 'active' : '' ?>">
                                     <a class="page-link" href="<?= $this->url('task-manager', [], ['query' => array_merge($_GET, ['page' => $i])]) ?>"><?= $i ?></a>
                                 </li>
                             <?php endfor; ?>
-                            
+
                             <?php if ($pagination['page'] < $pagination['total_pages']): ?>
                                 <li class="page-item">
                                     <a class="page-link" href="<?= $this->url('task-manager', [], ['query' => array_merge($_GET, ['page' => $pagination['page'] + 1])]) ?>">Próximo</a>
@@ -171,69 +171,69 @@ $this->headTitle($title);
 </div>
 
 <script>
-function completeTask(id) {
-    if (confirm('Marcar esta tarefa como concluída?')) {
-        fetch(`/tasks/complete/${id}`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Erro: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('Erro ao completar tarefa');
-        });
+    function completeTask(id) {
+        if (confirm('Marcar esta tarefa como concluída?')) {
+            fetch(`/tasks/complete/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Erro: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Erro ao completar tarefa');
+                });
+        }
     }
-}
 
-function duplicateTask(id) {
-    if (confirm('Duplicar esta tarefa?')) {
-        fetch(`/tasks/duplicate/${id}`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Erro: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('Erro ao duplicar tarefa');
-        });
+    function duplicateTask(id) {
+        if (confirm('Duplicar esta tarefa?')) {
+            fetch(`/tasks/duplicate/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Erro: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Erro ao duplicar tarefa');
+                });
+        }
     }
-}
 
-function deleteTask(id) {
-    if (confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
-        fetch(`/tasks/delete/${id}`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Erro: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('Erro ao excluir tarefa');
-        });
+    function deleteTask(id) {
+        if (confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
+            fetch(`/tasks/delete/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Erro: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Erro ao excluir tarefa');
+                });
+        }
     }
-}
 </script>

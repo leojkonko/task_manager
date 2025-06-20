@@ -31,19 +31,19 @@ class TaskService
         $task->setTitle($data['title']);
         $task->setDescription($data['description'] ?? null);
         $task->setUserId($data['user_id']);
-        
+
         if (isset($data['status'])) {
             $task->setStatus($data['status']);
         }
-        
+
         if (isset($data['priority'])) {
             $task->setPriority($data['priority']);
         }
-        
+
         if (isset($data['category_id'])) {
             $task->setCategoryId($data['category_id']);
         }
-        
+
         if (isset($data['due_date']) && !empty($data['due_date'])) {
             $task->setDueDate(new DateTime($data['due_date']));
         }
@@ -57,7 +57,7 @@ class TaskService
     public function updateTask(int $id, array $data): ?Task
     {
         $task = $this->taskRepository->findById($id);
-        
+
         if (!$task) {
             return null;
         }
@@ -67,23 +67,23 @@ class TaskService
         if (isset($data['title'])) {
             $task->setTitle($data['title']);
         }
-        
+
         if (isset($data['description'])) {
             $task->setDescription($data['description']);
         }
-        
+
         if (isset($data['status'])) {
             $task->setStatus($data['status']);
         }
-        
+
         if (isset($data['priority'])) {
             $task->setPriority($data['priority']);
         }
-        
+
         if (isset($data['category_id'])) {
             $task->setCategoryId($data['category_id']);
         }
-        
+
         if (isset($data['due_date'])) {
             if (!empty($data['due_date'])) {
                 $task->setDueDate(new DateTime($data['due_date']));
@@ -133,7 +133,7 @@ class TaskService
     public function completeTask(int $id): ?Task
     {
         $task = $this->taskRepository->findById($id);
-        
+
         if (!$task) {
             return null;
         }
@@ -148,7 +148,7 @@ class TaskService
     public function startTask(int $id): ?Task
     {
         $task = $this->taskRepository->findById($id);
-        
+
         if (!$task) {
             return null;
         }
@@ -178,43 +178,113 @@ class TaskService
      */
     private function validateTaskData(array $data, bool $isCreate = true): void
     {
+        // Validação do título
         if ($isCreate && empty($data['title'])) {
             throw new \InvalidArgumentException('O título da tarefa é obrigatório');
         }
 
-        if (isset($data['title']) && empty(trim($data['title']))) {
-            throw new \InvalidArgumentException('O título da tarefa não pode estar vazio');
+        if (isset($data['title'])) {
+            $title = trim($data['title']);
+            if (empty($title)) {
+                throw new \InvalidArgumentException('O título da tarefa não pode estar vazio');
+            }
+            if (strlen($title) < 3) {
+                throw new \InvalidArgumentException('O título deve ter pelo menos 3 caracteres');
+            }
+            if (strlen($title) > 200) {
+                throw new \InvalidArgumentException('O título não pode ter mais de 200 caracteres');
+            }
         }
 
+        // Validação da descrição
+        if (isset($data['description']) && $data['description'] !== null) {
+            if (strlen($data['description']) > 1000) {
+                throw new \InvalidArgumentException('A descrição não pode ter mais de 1000 caracteres');
+            }
+        }
+
+        // Validação do user_id
         if ($isCreate && empty($data['user_id'])) {
             throw new \InvalidArgumentException('O ID do usuário é obrigatório');
         }
 
-        if (isset($data['status']) && !in_array($data['status'], [
-            Task::STATUS_PENDING,
-            Task::STATUS_IN_PROGRESS,
-            Task::STATUS_COMPLETED,
-            Task::STATUS_CANCELLED
-        ])) {
-            throw new \InvalidArgumentException('Status inválido');
-        }
-
-        if (isset($data['priority']) && !in_array($data['priority'], [
-            Task::PRIORITY_LOW,
-            Task::PRIORITY_MEDIUM,
-            Task::PRIORITY_HIGH,
-            Task::PRIORITY_URGENT
-        ])) {
-            throw new \InvalidArgumentException('Prioridade inválida');
-        }
-
-        if (isset($data['due_date']) && !empty($data['due_date'])) {
-            try {
-                new DateTime($data['due_date']);
-            } catch (\Exception $e) {
-                throw new \InvalidArgumentException('Data de vencimento inválida');
+        if (isset($data['user_id'])) {
+            if (!is_numeric($data['user_id']) || (int)$data['user_id'] <= 0) {
+                throw new \InvalidArgumentException('ID do usuário deve ser um número positivo');
             }
         }
+
+        // Validação do status
+        if (isset($data['status'])) {
+            $validStatuses = [
+                Task::STATUS_PENDING,
+                Task::STATUS_IN_PROGRESS,
+                Task::STATUS_COMPLETED,
+                Task::STATUS_CANCELLED
+            ];
+            if (!in_array($data['status'], $validStatuses)) {
+                throw new \InvalidArgumentException('Status inválido. Valores aceitos: ' . implode(', ', $validStatuses));
+            }
+        }
+
+        // Validação da prioridade
+        if (isset($data['priority'])) {
+            $validPriorities = [
+                Task::PRIORITY_LOW,
+                Task::PRIORITY_MEDIUM,
+                Task::PRIORITY_HIGH,
+                Task::PRIORITY_URGENT
+            ];
+            if (!in_array($data['priority'], $validPriorities)) {
+                throw new \InvalidArgumentException('Prioridade inválida. Valores aceitos: ' . implode(', ', $validPriorities));
+            }
+        }
+
+        // Validação da data de vencimento
+        if (isset($data['due_date']) && !empty($data['due_date'])) {
+            if (!$this->isValidDateTime($data['due_date'])) {
+                throw new \InvalidArgumentException('Data de vencimento inválida. Use o formato Y-m-d H:i:s ou Y-m-d\\TH:i');
+            }
+
+            // Verificar se a data não é no passado (apenas para criação)
+            if ($isCreate) {
+                $dueDate = new DateTime($data['due_date']);
+                $now = new DateTime();
+                if ($dueDate < $now) {
+                    throw new \InvalidArgumentException('A data de vencimento não pode ser no passado');
+                }
+            }
+        }
+
+        // Validação do category_id
+        if (isset($data['category_id']) && $data['category_id'] !== null) {
+            if (!is_numeric($data['category_id']) || (int)$data['category_id'] <= 0) {
+                throw new \InvalidArgumentException('ID da categoria deve ser um número positivo');
+            }
+        }
+    }
+
+    /**
+     * Verifica se uma string é uma data/hora válida
+     */
+    private function isValidDateTime(string $dateTime): bool
+    {
+        // Formato ISO 8601 (Y-m-d\TH:i)
+        if (DateTime::createFromFormat('Y-m-d\TH:i', $dateTime) !== false) {
+            return true;
+        }
+
+        // Formato MySQL (Y-m-d H:i:s)
+        if (DateTime::createFromFormat('Y-m-d H:i:s', $dateTime) !== false) {
+            return true;
+        }
+
+        // Formato apenas data (Y-m-d)
+        if (DateTime::createFromFormat('Y-m-d', $dateTime) !== false) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -223,7 +293,7 @@ class TaskService
     public function duplicateTask(int $id): ?Task
     {
         $originalTask = $this->taskRepository->findById($id);
-        
+
         if (!$originalTask) {
             return null;
         }
@@ -246,7 +316,7 @@ class TaskService
     public function changeTaskPriority(int $id, string $priority): ?Task
     {
         $task = $this->taskRepository->findById($id);
-        
+
         if (!$task) {
             return null;
         }
@@ -261,7 +331,7 @@ class TaskService
     public function moveTaskToCategory(int $id, ?int $categoryId): ?Task
     {
         $task = $this->taskRepository->findById($id);
-        
+
         if (!$task) {
             return null;
         }
