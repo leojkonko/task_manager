@@ -90,25 +90,35 @@
     <div class="container">
         <!-- Mensagens Flash -->
         <?php if ($this->flashMessenger()->hasMessages()): ?>
-            <?php foreach ($this->flashMessenger()->getMessages() as $message): ?>
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <?= $this->escapeHtml($message) ?>
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-
-        <?php if ($this->flashMessenger()->hasErrorMessages()): ?>
-            <?php foreach ($this->flashMessenger()->getErrorMessages() as $message): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <?= $this->escapeHtml($message) ?>
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-            <?php endforeach; ?>
+            <div class="flash-messages">
+                <?php foreach ($this->flashMessenger()->getSuccessMessages() as $message): ?>
+                    <div class="alert alert-success alert-dismissible fade show" data-auto-dismiss role="alert">
+                        <i class="fas fa-check-circle me-2"></i><?= $this->escapeHtml($message) ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <?php endforeach; ?>
+                
+                <?php foreach ($this->flashMessenger()->getErrorMessages() as $message): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" data-auto-dismiss role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i><?= $this->escapeHtml($message) ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <?php endforeach; ?>
+                
+                <?php foreach ($this->flashMessenger()->getWarningMessages() as $message): ?>
+                    <div class="alert alert-warning alert-dismissible fade show" data-auto-dismiss role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i><?= $this->escapeHtml($message) ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <?php endforeach; ?>
+                
+                <?php foreach ($this->flashMessenger()->getInfoMessages() as $message): ?>
+                    <div class="alert alert-info alert-dismissible fade show" data-auto-dismiss role="alert">
+                        <i class="fas fa-info-circle me-2"></i><?= $this->escapeHtml($message) ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <?php endforeach; ?>
+            </div>
         <?php endif; ?>
 
         <?= $this->content ?>
@@ -137,6 +147,7 @@
 
     <!-- Task Validation Script -->
     <script src="<?= $this->basePath('js/task-validation.js') ?>"></script>
+    <script src="<?= $this->basePath('js/toast-manager.js') ?>"></script>
 
     <?= $this->inlineScript() ?>
 </body>

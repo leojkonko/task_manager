@@ -8,6 +8,7 @@ use TaskManager\Service\TaskService;
 use TaskManager\Entity\Task;
 use TaskManager\Form\TaskForm;
 use TaskManager\Validator\TaskBackendValidator;
+use TaskManager\Helper\MessageHelper;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
@@ -39,7 +40,7 @@ class TaskController extends AbstractActionController
 
         $filters = [
             'status' => $this->params()->fromQuery('status'),
-            'priority' => $this->params()->fromQuery('priority'),
+            'priority' => $this->params()->fromQuery('priority',
             'category_id' => $this->params()->fromQuery('category_id'),
             'search' => $this->params()->fromQuery('search'),
             'order_by' => $this->params()->fromQuery('order_by', 'created_at'),
@@ -113,7 +114,7 @@ class TaskController extends AbstractActionController
                 ]);
             }
 
-            $this->flashMessenger()->addErrorMessage('Tarefa não encontrada');
+            $this->flashMessenger()->addErrorMessage(MessageHelper::getErrorMessage('not_found'));
             return $this->redirect()->toRoute('task-manager');
         }
 
@@ -202,7 +203,7 @@ class TaskController extends AbstractActionController
                         ]);
                     }
 
-                    $this->flashMessenger()->addSuccessMessage('Tarefa criada com sucesso');
+                    $this->flashMessenger()->addSuccessMessage(MessageHelper::getSuccessMessage('create'));
                     return $this->redirect()->toRoute('task-manager/view', ['id' => $task->getId()]);
                 } catch (\Exception $e) {
                     if ($request->getHeader('X-Requested-With')) {
@@ -212,7 +213,9 @@ class TaskController extends AbstractActionController
                         ]);
                     }
 
-                    $this->flashMessenger()->addErrorMessage($e->getMessage());
+                    // Verificar se é erro específico e usar mensagem amigável
+                    $errorMessage = $this->getCustomErrorMessage($e->getMessage());
+                    $this->flashMessenger()->addErrorMessage($errorMessage);
                 }
             } else {
                 // Formulário inválido - exibir erros
@@ -252,7 +255,7 @@ class TaskController extends AbstractActionController
         $task = $this->taskService->getTaskById($id);
 
         if (!$task) {
-            $this->flashMessenger()->addErrorMessage('Tarefa não encontrada');
+            $this->flashMessenger()->addErrorMessage(MessageHelper::getErrorMessage('not_found'));
             return $this->redirect()->toRoute('task-manager');
         }
 
@@ -267,6 +270,29 @@ class TaskController extends AbstractActionController
 
             // Primeiro: sanitizar dados de entrada
             $sanitizedData = TaskBackendValidator::sanitize($postData);
+
+            // Verificar se a tarefa pode ser atualizada (status pending)
+            $operationErrors = TaskBackendValidator::validateTaskUpdate($task->getStatus());
+            if (!empty($operationErrors)) {
+                if ($request->getHeader('X-Requested-With')) {
+                    return new JsonModel([
+                        'success' => false,
+                        'message' => 'Operação não permitida',
+                        'errors' => ['operation' => $operationErrors]
+                    ]);
+                }
+
+                foreach ($operationErrors as $error) {
+                    $this->flashMessenger()->addErrorMessage($error);
+                }
+
+                return new ViewModel([
+                    'form' => $form,
+                    'task' => $task->toArray(),
+                    'availableStatuses' => Task::getAvailableStatuses(),
+                    'availablePriorities' => Task::getAvailablePriorities(),
+                ]);
+            }
 
             // Segundo: validar dados no backend (não é criação, então isCreate = false)
             $validationErrors = TaskBackendValidator::validate($sanitizedData, false);
@@ -317,7 +343,7 @@ class TaskController extends AbstractActionController
                         ]);
                     }
 
-                    $this->flashMessenger()->addSuccessMessage('Tarefa atualizada com sucesso');
+                    $this->flashMessenger()->addSuccessMessage(MessageHelper::getSuccessMessage('update'));
                     return $this->redirect()->toRoute('task-manager/view', ['id' => $id]);
                 } catch (\Exception $e) {
                     if ($request->getHeader('X-Requested-With')) {
@@ -327,7 +353,8 @@ class TaskController extends AbstractActionController
                         ]);
                     }
 
-                    $this->flashMessenger()->addErrorMessage($e->getMessage());
+                    $errorMessage = $this->getCustomErrorMessage($e->getMessage());
+                    $this->flashMessenger()->addErrorMessage($errorMessage);
                 }
             } else {
                 // Formulário inválido - exibir erros
@@ -383,13 +410,34 @@ class TaskController extends AbstractActionController
                 ]);
             }
 
-            $this->flashMessenger()->addErrorMessage('Tarefa não encontrada');
+            $this->flashMessenger()->addErrorMessage(MessageHelper::getErrorMessage('not_found'));
             return $this->redirect()->toRoute('task-manager');
         }
 
         $request = $this->getRequest();
 
         if ($request instanceof Request && $request->isPost()) {
+            // Verificar se a tarefa pode ser excluída (status pending e idade > 5 dias)
+            $operationErrors = TaskBackendValidator::validateTaskDeletion(
+                $task->getStatus(), 
+                $task->getCreatedAt()
+            );
+            if (!empty($operationErrors)) {
+                if ($request->getHeader('X-Requested-With')) {
+                    return new JsonModel([
+                        'success' => false,
+                        'message' => 'Operação não permitida',
+                        'errors' => ['operation' => $operationErrors]
+                    ]);
+                }
+
+                foreach ($operationErrors as $error) {
+                    $this->flashMessenger()->addErrorMessage($error);
+                }
+
+                return $this->redirect()->toRoute('task-manager');
+            }
+
             try {
                 $deleted = $this->taskService->deleteTask($id);
 
@@ -401,7 +449,7 @@ class TaskController extends AbstractActionController
                         ]);
                     }
 
-                    $this->flashMessenger()->addSuccessMessage('Tarefa excluída com sucesso');
+                    $this->flashMessenger()->addSuccessMessage(MessageHelper::getSuccessMessage('delete'));
                 } else {
                     if ($request->getHeader('X-Requested-With')) {
                         return new JsonModel([
@@ -410,7 +458,7 @@ class TaskController extends AbstractActionController
                         ]);
                     }
 
-                    $this->flashMessenger()->addErrorMessage('Erro ao excluir tarefa');
+                    $this->flashMessenger()->addErrorMessage(MessageHelper::getErrorMessage('general_error'));
                 }
             } catch (\Exception $e) {
                 if ($request->getHeader('X-Requested-With')) {
@@ -569,5 +617,31 @@ class TaskController extends AbstractActionController
                 'message' => 'Erro ao buscar estatísticas'
             ]);
         }
+    }
+
+    /**
+     * Helper para converter mensagens de erro técnicas em mensagens amigáveis
+     */
+    private function getCustomErrorMessage(string $technicalMessage): string
+    {
+        // Verificar se contém mensagens específicas conhecidas
+        if (strpos($technicalMessage, 'fim de semana') !== false) {
+            return MessageHelper::getErrorMessage('weekday_only');
+        }
+        
+        if (strpos($technicalMessage, 'pending') !== false && strpos($technicalMessage, 'atualizada') !== false) {
+            return MessageHelper::getErrorMessage('pending_only_update');
+        }
+        
+        if (strpos($technicalMessage, 'pending') !== false && strpos($technicalMessage, 'excluída') !== false) {
+            return MessageHelper::getErrorMessage('pending_only_delete');
+        }
+        
+        if (strpos($technicalMessage, '5 dias') !== false) {
+            return MessageHelper::getErrorMessage('too_recent_delete');
+        }
+        
+        // Retornar mensagem genérica se não for erro conhecido
+        return MessageHelper::getErrorMessage('general_error');
     }
 }

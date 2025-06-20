@@ -281,6 +281,9 @@ return [
             Exception\ValidationExceptionHandler::class => function ($container) {
                 return new Exception\ValidationExceptionHandler();
             },
+            Helper\MessageHelper::class => function ($container) {
+                return new Helper\MessageHelper();
+            },
         ],
     ],
 

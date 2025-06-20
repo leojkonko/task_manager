@@ -223,6 +223,17 @@ class ApiController extends AbstractRestfulController
                 ], 404);
             }
 
+            // Verificar se a tarefa pode ser atualizada (status pending)
+            $operationErrors = TaskBackendValidator::validateTaskUpdate($existingTask->getStatus());
+            if (!empty($operationErrors)) {
+                return $this->createJsonResponse([
+                    'success' => false,
+                    'message' => 'Operação não permitida',
+                    'errors' => ['operation' => $operationErrors],
+                    'error_code' => 'OPERATION_NOT_ALLOWED'
+                ], 403);
+            }
+
             // Obter dados do corpo da requisição
             $contentType = $request->getHeader('Content-Type');
 
@@ -311,6 +322,20 @@ class ApiController extends AbstractRestfulController
                 ], 404);
             }
 
+            // Verificar se a tarefa pode ser excluída (status pending e idade > 5 dias)
+            $operationErrors = TaskBackendValidator::validateTaskDeletion(
+                $task->getStatus(), 
+                $task->getCreatedAt()
+            );
+            if (!empty($operationErrors)) {
+                return $this->createJsonResponse([
+                    'success' => false,
+                    'message' => 'Operação não permitida',
+                    'errors' => ['operation' => $operationErrors],
+                    'error_code' => 'OPERATION_NOT_ALLOWED'
+                ], 403);
+            }
+
             // Excluir tarefa
             $deleted = $this->taskService->deleteTask($id);
 
@@ -344,7 +369,7 @@ class ApiController extends AbstractRestfulController
         $response->setStatusCode($statusCode);
         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
         $response->setContent(json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-        
+
         return $response;
     }
 
@@ -354,9 +379,9 @@ class ApiController extends AbstractRestfulController
     public function completeAction()
     {
         $this->getResponse()->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-        
+
         $id = (int) $this->params()->fromRoute('id', 0);
-        
+
         if (!$id) {
             return $this->createJsonResponse([
                 'success' => false,
@@ -364,10 +389,10 @@ class ApiController extends AbstractRestfulController
                 'error_code' => 'MISSING_ID'
             ], 400);
         }
-        
+
         try {
             $task = $this->taskService->completeTask($id);
-            
+
             if ($task) {
                 return $this->createJsonResponse([
                     'success' => true,
@@ -396,9 +421,9 @@ class ApiController extends AbstractRestfulController
     public function startAction()
     {
         $this->getResponse()->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-        
+
         $id = (int) $this->params()->fromRoute('id', 0);
-        
+
         if (!$id) {
             return $this->createJsonResponse([
                 'success' => false,
@@ -406,10 +431,10 @@ class ApiController extends AbstractRestfulController
                 'error_code' => 'MISSING_ID'
             ], 400);
         }
-        
+
         try {
             $task = $this->taskService->startTask($id);
-            
+
             if ($task) {
                 return $this->createJsonResponse([
                     'success' => true,
@@ -438,9 +463,9 @@ class ApiController extends AbstractRestfulController
     public function duplicateAction()
     {
         $this->getResponse()->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-        
+
         $id = (int) $this->params()->fromRoute('id', 0);
-        
+
         if (!$id) {
             return $this->createJsonResponse([
                 'success' => false,
@@ -448,10 +473,10 @@ class ApiController extends AbstractRestfulController
                 'error_code' => 'MISSING_ID'
             ], 400);
         }
-        
+
         try {
             $task = $this->taskService->duplicateTask($id);
-            
+
             if ($task) {
                 return $this->createJsonResponse([
                     'success' => true,
@@ -480,19 +505,19 @@ class ApiController extends AbstractRestfulController
     public function statisticsAction()
     {
         $this->getResponse()->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-        
+
         $userId = 1; // Usuário fixo para teste
-        
+
         try {
             $statistics = $this->taskService->getTaskStatistics($userId);
             $overdueTasks = $this->taskService->getOverdueTasks($userId);
-            
+
             $data = array_merge($statistics, [
                 'overdue_tasks' => array_map(function ($task) {
                     return $task->toArray();
                 }, $overdueTasks)
             ]);
-            
+
             return $this->createJsonResponse([
                 'success' => true,
                 'data' => $data

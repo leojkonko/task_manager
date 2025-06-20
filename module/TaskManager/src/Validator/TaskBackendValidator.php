@@ -297,4 +297,117 @@ class TaskBackendValidator
 
         return $errors;
     }
+
+    /**
+     * Valida se uma tarefa pode ser atualizada
+     * Tarefas só podem ser atualizadas se estiverem com status "pending"
+     */
+    public static function validateTaskUpdate($currentStatus): array
+    {
+        $errors = [];
+
+        if ($currentStatus !== 'pending') {
+            $errors[] = 'Apenas tarefas com status "pending" podem ser atualizadas';
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida se uma tarefa pode ser excluída
+     * Tarefas só podem ser excluídas se estiverem com status "pending" 
+     * e criadas há mais de 5 dias
+     */
+    public static function validateTaskDeletion($currentStatus, $createdAt = null): array
+    {
+        $errors = [];
+
+        if ($currentStatus !== 'pending') {
+            $errors[] = 'Apenas tarefas com status "pending" podem ser excluídas';
+        }
+
+        // Validar se a tarefa foi criada há mais de 5 dias
+        if ($createdAt !== null) {
+            $creationDateErrors = self::validateDeletionAge($createdAt);
+            if (!empty($creationDateErrors)) {
+                $errors = array_merge($errors, $creationDateErrors);
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida operações de atualização com verificação de status
+     */
+    public static function validateUpdateOperation($currentTask, array $data): array
+    {
+        $errors = [];
+
+        // Verificar se a tarefa pode ser atualizada
+        $statusErrors = self::validateTaskUpdate($currentTask->getStatus());
+        if (!empty($statusErrors)) {
+            $errors['operation'] = $statusErrors;
+        }
+
+        // Se a tarefa pode ser atualizada, validar os dados
+        if (empty($statusErrors)) {
+            $dataErrors = self::validate($data, false);
+            $errors = array_merge($errors, $dataErrors);
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida operações de exclusão com verificação de status e idade
+     */
+    public static function validateDeleteOperation($currentTask): array
+    {
+        $errors = [];
+
+        $statusErrors = self::validateTaskDeletion(
+            $currentTask->getStatus(), 
+            $currentTask->getCreatedAt()
+        );
+        if (!empty($statusErrors)) {
+            $errors['operation'] = $statusErrors;
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida se a tarefa tem idade suficiente para ser excluída (mais de 5 dias)
+     */
+    private static function validateDeletionAge($createdAt): array
+    {
+        $errors = [];
+
+        try {
+            // Converter created_at para DateTime se for string
+            if (is_string($createdAt)) {
+                $createdAtObj = new DateTime($createdAt);
+            } elseif ($createdAt instanceof DateTime) {
+                $createdAtObj = $createdAt;
+            } else {
+                $errors[] = 'Data de criação inválida';
+                return $errors;
+            }
+
+            $now = new DateTime();
+            $fiveDaysAgo = (clone $now)->modify('-5 days');
+
+            // Verificar se a tarefa foi criada há mais de 5 dias
+            if ($createdAtObj > $fiveDaysAgo) {
+                $daysSinceCreation = $now->diff($createdAtObj)->days;
+                $remainingDays = 5 - $daysSinceCreation;
+                $errors[] = "Tarefas só podem ser excluídas após 5 dias da criação. Aguarde mais {$remainingDays} dia(s)";
+            }
+        } catch (\Exception $e) {
+            $errors[] = 'Erro ao validar data de criação da tarefa';
+        }
+
+        return $errors;
+    }
 }

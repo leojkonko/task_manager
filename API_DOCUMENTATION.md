@@ -114,6 +114,9 @@ GET http://localhost:8080/api/tasks/statistics
 
 ### Regras de Negócio
 - ✅ **Criação apenas em dias úteis**: Tarefas só podem ser criadas de segunda a sexta-feira
+- ✅ **Atualização apenas com status "pending"**: Tarefas só podem ser atualizadas se estiverem com status "pending"
+- ✅ **Exclusão apenas com status "pending"**: Tarefas só podem ser excluídas se estiverem com status "pending"
+- ✅ **Exclusão apenas após 5 dias**: Tarefas só podem ser excluídas se foram criadas há mais de 5 dias
 - ✅ **Data de vencimento**: Não pode ser no passado (apenas na criação)
 
 ### Título
@@ -197,7 +200,39 @@ POST /api/tasks/create
     "description": "Tentativa de criar tarefa no sábado ou domingo"
 }
 ```
-**Resposta esperada**: Erro de validação (apenas se executado durante fim de semana)
+**Resposta esperada**: Erro de validação (apenas na execução durante fim de semana)
+
+### 7. Teste de Atualização de Tarefa com Status Não-Pending
+```json
+PUT /api/tasks/update/1
+{
+    "title": "Tentativa de atualizar tarefa concluída",
+    "description": "Esta tarefa já está completed/in_progress/cancelled"
+}
+```
+**Resposta esperada**: Erro 403 - Operação não permitida
+
+### 8. Teste de Exclusão de Tarefa com Status Não-Pending
+```json
+DELETE /api/tasks/delete/1
+```
+**Resposta esperada**: Erro 403 - Operação não permitida (se a tarefa não estiver com status "pending")
+
+### 9. Teste de Exclusão de Tarefa Muito Recente (menos de 5 dias)
+```json
+DELETE /api/tasks/delete/1
+```
+**Resposta esperada**: Erro 403 - Operação não permitida
+```json
+{
+    "success": false,
+    "message": "Operação não permitida",
+    "errors": {
+        "operation": ["Tarefas só podem ser excluídas após 5 dias da criação. Aguarde mais 3 dia(s)"]
+    },
+    "error_code": "OPERATION_NOT_ALLOWED"
+}
+```
 
 ## Respostas de Sucesso
 
@@ -311,6 +346,18 @@ POST /api/tasks/create
 }
 ```
 
+### Operação Não Permitida (Status Incorreto)
+```json
+{
+    "success": false,
+    "message": "Operação não permitida",
+    "errors": {
+        "operation": ["Apenas tarefas com status \"pending\" podem ser atualizadas"]
+    },
+    "error_code": "OPERATION_NOT_ALLOWED"
+}
+```
+
 ## Códigos de Status HTTP
 
 | Código | Significado | Quando é usado |
@@ -318,6 +365,7 @@ POST /api/tasks/create
 | 200 | OK | Operação realizada com sucesso |
 | 201 | Created | Recurso criado com sucesso |
 | 400 | Bad Request | Dados inválidos ou malformados |
+| 403 | Forbidden | Operação não permitida (ex: atualizar tarefa não-pending) |
 | 404 | Not Found | Recurso não encontrado |
 | 405 | Method Not Allowed | Método HTTP não permitido |
 | 500 | Internal Server Error | Erro interno do servidor |
