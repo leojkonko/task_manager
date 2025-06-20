@@ -179,7 +179,16 @@ $this->headTitle($title);
     }
 
     function deleteTask(id) {
-        if (confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
+        // Usar mensagem de confirmação personalizada
+        const taskTitle = '<?= addslashes($task['title']) ?>';
+        const confirmMessage = `🗑️ Tem certeza que deseja excluir "${taskTitle}"?\n\nEsta ação não pode ser desfeita.`;
+        
+        if (confirm(confirmMessage)) {
+            // Mostrar loading toast
+            if (typeof showInfoToast === 'function') {
+                showInfoToast('⏳ Processando exclusão...', 'Aguarde');
+            }
+            
             fetch(`/tasks/delete/${id}`, {
                     method: 'POST',
                     headers: {
@@ -189,14 +198,33 @@ $this->headTitle($title);
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('Tarefa excluída com sucesso!');
-                        window.location.href = '/tasks';
+                        // Sucesso - usar toast verde
+                        if (typeof showSuccessToast === 'function') {
+                            showSuccessToast('🎉 Tarefa excluída com sucesso!', 'Concluído!');
+                        } else {
+                            alert('Tarefa excluída com sucesso!');
+                        }
+                        
+                        // Redirecionar após um pequeno delay para mostrar o toast
+                        setTimeout(() => {
+                            window.location.href = '/tasks';
+                        }, 1500);
                     } else {
-                        alert('Erro: ' + data.message);
+                        // Erro - usar toast vermelho com mensagem amigável
+                        if (typeof showErrorToast === 'function') {
+                            showErrorToast(data.message || '😓 Algo não saiu como esperado. Tente novamente em alguns instantes.', 'Ops!');
+                        } else {
+                            alert('Erro: ' + data.message);
+                        }
                     }
                 })
                 .catch(error => {
-                    alert('Erro ao excluir tarefa');
+                    // Erro de rede - usar toast vermelho
+                    if (typeof showErrorToast === 'function') {
+                        showErrorToast('😓 Erro de conexão. Verifique sua internet e tente novamente.', 'Erro de Rede');
+                    } else {
+                        alert('Erro ao excluir tarefa');
+                    }
                 });
         }
     }

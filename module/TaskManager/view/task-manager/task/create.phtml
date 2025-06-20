@@ -12,84 +12,136 @@ $this->headTitle($title);
                 </div>
                 <div class="card-body">
                     <?php
-                    $form->setAttribute('action', $this->url('task-manager/create'));
-                    $form->setAttribute('data-enhance-feedback', 'true');
-                    $form->prepare();
-                    echo $this->form()->openTag($form);
+                    // Verificar se hoje é dia útil (segunda a sexta)
+                    $today = new DateTime();
+                    $dayOfWeek = (int)$today->format('N'); // 1 = segunda, 7 = domingo
+                    $isWeekend = $dayOfWeek >= 6; // 6 = sábado, 7 = domingo
+                    $dayNames = [
+                        1 => 'Segunda-feira',
+                        2 => 'Terça-feira', 
+                        3 => 'Quarta-feira',
+                        4 => 'Quinta-feira',
+                        5 => 'Sexta-feira',
+                        6 => 'Sábado',
+                        7 => 'Domingo'
+                    ];
                     ?>
+                    
+                    <!-- Aviso sobre dias úteis -->
+                    <?php if ($isWeekend): ?>
+                        <?php
+                        // Calcular próximo dia útil
+                        $nextWeekday = clone $today;
+                        while ((int)$nextWeekday->format('N') >= 6) {
+                            $nextWeekday->add(new DateInterval('P1D'));
+                        }
+                        ?>
+                        <div class="alert alert-warning mb-4">
+                            <h5><i class="fas fa-calendar-times"></i> Criação de tarefas indisponível</h5>
+                            <p class="mb-2">
+                                <strong>Hoje é <?= $dayNames[$dayOfWeek] ?></strong> - Tarefas só podem ser criadas em dias úteis (segunda a sexta-feira).
+                            </p>
+                            <p class="mb-0">
+                                <i class="fas fa-info-circle"></i> 
+                                <strong>Próximo dia útil:</strong> <?= $dayNames[(int)$nextWeekday->format('N')] ?>, <?= $nextWeekday->format('d/m/Y') ?>
+                            </p>
+                        </div>
+                        
+                        <!-- Desabilitar o formulário -->
+                        <div class="text-center p-4">
+                            <i class="fas fa-business-time fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">Formulário indisponível nos finais de semana</h4>
+                            <p class="text-muted">Volte na próxima segunda-feira para criar novas tarefas!</p>
+                            <a href="<?= $this->url('task-manager') ?>" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar para Lista de Tarefas
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-success mb-4">
+                            <i class="fas fa-check-circle"></i>
+                            <strong>Ótimo!</strong> Hoje é <?= $dayNames[$dayOfWeek] ?> - Você pode criar tarefas normalmente.
+                        </div>
 
-                    <!-- Exibir erros de validação -->
-                    <?php if ($form->getMessages()): ?>
-                        <div class="alert alert-danger">
-                            <h6>Por favor, corrija os seguintes erros:</h6>
-                            <ul class="mb-0">
-                                <?php foreach ($form->getMessages() as $field => $errors): ?>
-                                    <?php foreach ($errors as $error): ?>
-                                        <li><?= $this->escapeHtml($error) ?></li>
+                        <?php
+                        $form->setAttribute('action', $this->url('task-manager/create'));
+                        $form->setAttribute('data-enhance-feedback', 'true');
+                        $form->prepare();
+                        echo $this->form()->openTag($form);
+                        ?>
+
+                        <!-- Exibir erros de validação -->
+                        <?php if ($form->getMessages()): ?>
+                            <div class="alert alert-danger">
+                                <h6>Por favor, corrija os seguintes erros:</h6>
+                                <ul class="mb-0">
+                                    <?php foreach ($form->getMessages() as $field => $errors): ?>
+                                        <?php foreach ($errors as $error): ?>
+                                            <li><?= $this->escapeHtml($error) ?></li>
+                                        <?php endforeach; ?>
                                     <?php endforeach; ?>
-                                <?php endforeach; ?>
-                            </ul>
+                                </ul>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- CSRF Token (hidden) -->
+                        <?= $this->formElement($form->get('csrf')) ?>
+
+                        <div class="mb-3">
+                            <?= $this->formLabel($form->get('title')) ?>
+                            <?= $this->formElement($form->get('title')) ?>
+                            <?= $this->formElementErrors($form->get('title')) ?>
                         </div>
+
+                        <div class="mb-3">
+                            <?= $this->formLabel($form->get('description')) ?>
+                            <?= $this->formElement($form->get('description')) ?>
+                            <?= $this->formElementErrors($form->get('description')) ?>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <?= $this->formLabel($form->get('status')) ?>
+                                    <?= $this->formElement($form->get('status')) ?>
+                                    <?= $this->formElementErrors($form->get('status')) ?>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <?= $this->formLabel($form->get('priority')) ?>
+                                    <?= $this->formElement($form->get('priority')) ?>
+                                    <?= $this->formElementErrors($form->get('priority')) ?>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <?= $this->formLabel($form->get('due_date')) ?>
+                                    <?= $this->formElement($form->get('due_date')) ?>
+                                    <?= $this->formElementErrors($form->get('due_date')) ?>
+                                    <div class="form-text">Deixe em branco se não houver prazo específico</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <?= $this->formLabel($form->get('category_id')) ?>
+                                    <?= $this->formElement($form->get('category_id')) ?>
+                                    <?= $this->formElementErrors($form->get('category_id')) ?>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="<?= $this->url('task-manager') ?>" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <?= $this->formElement($form->get('submit')) ?>
+                        </div>
+
+                        <?= $this->form()->closeTag() ?>
                     <?php endif; ?>
-
-                    <!-- CSRF Token (hidden) -->
-                    <?= $this->formElement($form->get('csrf')) ?>
-
-                    <div class="mb-3">
-                        <?= $this->formLabel($form->get('title')) ?>
-                        <?= $this->formElement($form->get('title')) ?>
-                        <?= $this->formElementErrors($form->get('title')) ?>
-                    </div>
-
-                    <div class="mb-3">
-                        <?= $this->formLabel($form->get('description')) ?>
-                        <?= $this->formElement($form->get('description')) ?>
-                        <?= $this->formElementErrors($form->get('description')) ?>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <?= $this->formLabel($form->get('status')) ?>
-                                <?= $this->formElement($form->get('status')) ?>
-                                <?= $this->formElementErrors($form->get('status')) ?>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <?= $this->formLabel($form->get('priority')) ?>
-                                <?= $this->formElement($form->get('priority')) ?>
-                                <?= $this->formElementErrors($form->get('priority')) ?>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <?= $this->formLabel($form->get('due_date')) ?>
-                                <?= $this->formElement($form->get('due_date')) ?>
-                                <?= $this->formElementErrors($form->get('due_date')) ?>
-                                <div class="form-text">Deixe em branco se não houver prazo específico</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <?= $this->formLabel($form->get('category_id')) ?>
-                                <?= $this->formElement($form->get('category_id')) ?>
-                                <?= $this->formElementErrors($form->get('category_id')) ?>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-between">
-                        <a href="<?= $this->url('task-manager') ?>" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Voltar
-                        </a>
-                        <?= $this->formElement($form->get('submit')) ?>
-                    </div>
-
-                    <?= $this->form()->closeTag() ?>
                 </div>
             </div>
         </div>

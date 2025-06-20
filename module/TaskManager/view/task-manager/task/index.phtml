@@ -8,10 +8,51 @@ $this->headTitle($title);
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="mb-0"><?= $this->escapeHtml($title) ?></h1>
-                <a href="<?= $this->url('task-manager/create') ?>" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Nova Tarefa
-                </a>
+                <?php
+                // Verificar se hoje é dia útil para criação de tarefas
+                $today = new DateTime();
+                $dayOfWeek = (int)$today->format('N'); // 1 = segunda, 7 = domingo
+                $isWeekend = $dayOfWeek >= 6; // 6 = sábado, 7 = domingo
+                ?>
+                
+                <?php if ($isWeekend): ?>
+                    <button type="button" class="btn btn-primary disabled position-relative" 
+                        title="Tarefas só podem ser criadas em dias úteis (segunda a sexta-feira)"
+                        data-bs-toggle="tooltip" data-bs-placement="left">
+                        <i class="fas fa-plus"></i> Nova Tarefa
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                            <i class="fas fa-calendar-times" style="font-size: 0.7em;"></i>
+                        </span>
+                    </button>
+                <?php else: ?>
+                    <a href="<?= $this->url('task-manager/create') ?>" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nova Tarefa
+                    </a>
+                <?php endif; ?>
             </div>
+
+            <?php if ($isWeekend): ?>
+                <?php
+                $dayNames = [6 => 'Sábado', 7 => 'Domingo'];
+                // Calcular próximo dia útil
+                $nextWeekday = clone $today;
+                while ((int)$nextWeekday->format('N') >= 6) {
+                    $nextWeekday->add(new DateInterval('P1D'));
+                }
+                $nextWeekdayNames = [
+                    1 => 'Segunda-feira', 2 => 'Terça-feira', 3 => 'Quarta-feira',
+                    4 => 'Quinta-feira', 5 => 'Sexta-feira'
+                ];
+                $nextWeekdayName = $nextWeekdayNames[(int)$nextWeekday->format('N')];
+                ?>
+                <div class="alert alert-info mb-4">
+                    <h5><i class="fas fa-info-circle"></i> Criação de tarefas indisponível</h5>
+                    <p class="mb-0">
+                        <strong>Hoje é <?= $dayNames[$dayOfWeek] ?></strong> - Novas tarefas só podem ser criadas durante a semana (segunda a sexta-feira).
+                        <br><strong>Próximo dia útil:</strong> <?= $nextWeekdayName ?>, <?= $nextWeekday->format('d/m/Y') ?>
+                    </p>
+                </div>
+            <?php endif; ?>
 
             <!-- Filtros -->
             <div class="card mb-4">
@@ -117,11 +158,55 @@ $this->headTitle($title);
                                     <?php endif; ?>
                                 </div>
                                 <div class="card-footer">
+                                    <!-- Avisos sobre restrições da tarefa -->
+                                    <?php 
+                                    $hasRestrictions = false;
+                                    $restrictions = [];
+                                    
+                                    if ($task['status'] !== 'pending') {
+                                        $hasRestrictions = true;
+                                        $restrictions[] = 'Tarefa não pode ser editada ou excluída (status: ' . $availableStatuses[$task['status']] . ')';
+                                    }
+                                    
+                                    if ($task['status'] === 'pending') {
+                                        $createdAt = new DateTime($task['created_at']);
+                                        $now = new DateTime();
+                                        $daysSinceCreation = $now->diff($createdAt)->days;
+                                        if ($daysSinceCreation < 5) {
+                                            $hasRestrictions = true;
+                                            $remainingDays = 5 - $daysSinceCreation;
+                                            $restrictions[] = "Exclusão disponível em {$remainingDays} dia(s)";
+                                        }
+                                    }
+                                    ?>
+                                    
+                                    <?php if ($hasRestrictions): ?>
+                                        <div class="alert alert-warning alert-sm py-2 mb-2" style="font-size: 0.85em;">
+                                            <i class="fas fa-info-circle"></i>
+                                            <strong>Restrições:</strong><br>
+                                            <?php foreach ($restrictions as $restriction): ?>
+                                                • <?= $this->escapeHtml($restriction) ?><br>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+
                                     <div class="btn-group w-100" role="group">
                                         <a href="<?= $this->url('task-manager/view', ['id' => $task['id']]) ?>"
                                             class="btn btn-outline-primary btn-sm">Ver</a>
-                                        <a href="<?= $this->url('task-manager/edit', ['id' => $task['id']]) ?>"
-                                            class="btn btn-outline-secondary btn-sm">Editar</a>
+                                        
+                                        <?php if ($task['status'] === 'pending'): ?>
+                                            <a href="<?= $this->url('task-manager/edit', ['id' => $task['id']]) ?>"
+                                                class="btn btn-outline-secondary btn-sm">Editar</a>
+                                        <?php else: ?>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm disabled position-relative" 
+                                                title="Apenas tarefas pendentes podem ser editadas"
+                                                data-bs-toggle="tooltip" data-bs-placement="top">
+                                                Editar
+                                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                                                    <i class="fas fa-lock" style="font-size: 0.6em;"></i>
+                                                </span>
+                                            </button>
+                                        <?php endif; ?>
 
                                         <?php if (!$task['is_completed']): ?>
                                             <button type="button" class="btn btn-outline-success btn-sm"
@@ -132,8 +217,42 @@ $this->headTitle($title);
                                     <div class="btn-group w-100 mt-1" role="group">
                                         <button type="button" class="btn btn-outline-info btn-sm"
                                             onclick="duplicateTask(<?= $task['id'] ?>)">Duplicar</button>
-                                        <button type="button" class="btn btn-outline-danger btn-sm"
-                                            onclick="deleteTask(<?= $task['id'] ?>)">Excluir</button>
+                                        
+                                        <?php 
+                                        // Verificar se pode excluir: status pending + mais de 5 dias
+                                        $canDelete = $task['status'] === 'pending';
+                                        $createdAt = new DateTime($task['created_at']);
+                                        $now = new DateTime();
+                                        $daysSinceCreation = $now->diff($createdAt)->days;
+                                        $ageRequirementMet = $daysSinceCreation >= 5;
+                                        $canDelete = $canDelete && $ageRequirementMet;
+                                        ?>
+                                        
+                                        <?php if ($canDelete): ?>
+                                            <button type="button" class="btn btn-outline-danger btn-sm"
+                                                onclick="deleteTask(<?= $task['id'] ?>)">Excluir</button>
+                                        <?php else: ?>
+                                            <?php 
+                                            $tooltip = '';
+                                            $lockReason = '';
+                                            if ($task['status'] !== 'pending') {
+                                                $tooltip = 'Apenas tarefas pendentes podem ser excluídas';
+                                                $lockReason = 'Status';
+                                            } elseif (!$ageRequirementMet) {
+                                                $remainingDays = 5 - $daysSinceCreation;
+                                                $tooltip = "Aguarde mais {$remainingDays} dia(s) para excluir";
+                                                $lockReason = $remainingDays . 'd';
+                                            }
+                                            ?>
+                                            <button type="button" class="btn btn-outline-danger btn-sm disabled position-relative" 
+                                                title="<?= $this->escapeHtmlAttr($tooltip) ?>"
+                                                data-bs-toggle="tooltip" data-bs-placement="top">
+                                                Excluir
+                                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white">
+                                                    <i class="fas fa-lock" style="font-size: 0.6em;"></i>
+                                                </span>
+                                            </button>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
@@ -172,7 +291,14 @@ $this->headTitle($title);
 
 <script>
     function completeTask(id) {
-        if (confirm('Marcar esta tarefa como concluída?')) {
+        const confirmMessage = '🏆 Marcar esta tarefa como concluída?';
+        
+        if (confirm(confirmMessage)) {
+            // Mostrar loading toast
+            if (typeof showInfoToast === 'function') {
+                showInfoToast('⏳ Processando...', 'Aguarde');
+            }
+            
             fetch(`/tasks/complete/${id}`, {
                     method: 'POST',
                     headers: {
@@ -182,19 +308,37 @@ $this->headTitle($title);
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        location.reload();
+                        if (typeof showSuccessToast === 'function') {
+                            showSuccessToast('🏆 Parabéns! Tarefa marcada como concluída.', 'Sucesso!');
+                        }
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        alert('Erro: ' + data.message);
+                        if (typeof showErrorToast === 'function') {
+                            showErrorToast(data.message || '😓 Algo não saiu como esperado.', 'Ops!');
+                        } else {
+                            alert('Erro: ' + data.message);
+                        }
                     }
                 })
                 .catch(error => {
-                    alert('Erro ao completar tarefa');
+                    if (typeof showErrorToast === 'function') {
+                        showErrorToast('😓 Erro de conexão. Tente novamente.', 'Erro de Rede');
+                    } else {
+                        alert('Erro ao completar tarefa');
+                    }
                 });
         }
     }
 
     function duplicateTask(id) {
-        if (confirm('Duplicar esta tarefa?')) {
+        const confirmMessage = '📋 Duplicar esta tarefa?';
+        
+        if (confirm(confirmMessage)) {
+            // Mostrar loading toast
+            if (typeof showInfoToast === 'function') {
+                showInfoToast('⏳ Duplicando tarefa...', 'Aguarde');
+            }
+            
             fetch(`/tasks/duplicate/${id}`, {
                     method: 'POST',
                     headers: {
@@ -204,19 +348,37 @@ $this->headTitle($title);
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        location.reload();
+                        if (typeof showSuccessToast === 'function') {
+                            showSuccessToast('📋 Tarefa duplicada com sucesso! Uma nova tarefa foi criada.', 'Concluído!');
+                        }
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        alert('Erro: ' + data.message);
+                        if (typeof showErrorToast === 'function') {
+                            showErrorToast(data.message || '😓 Algo não saiu como esperado.', 'Ops!');
+                        } else {
+                            alert('Erro: ' + data.message);
+                        }
                     }
                 })
                 .catch(error => {
-                    alert('Erro ao duplicar tarefa');
+                    if (typeof showErrorToast === 'function') {
+                        showErrorToast('😓 Erro de conexão. Tente novamente.', 'Erro de Rede');
+                    } else {
+                        alert('Erro ao duplicar tarefa');
+                    }
                 });
         }
     }
 
     function deleteTask(id) {
-        if (confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
+        const confirmMessage = '🗑️ Tem certeza que deseja excluir esta tarefa?\n\nEsta ação não pode ser desfeita.';
+        
+        if (confirm(confirmMessage)) {
+            // Mostrar loading toast
+            if (typeof showInfoToast === 'function') {
+                showInfoToast('⏳ Processando exclusão...', 'Aguarde');
+            }
+            
             fetch(`/tasks/delete/${id}`, {
                     method: 'POST',
                     headers: {
@@ -226,14 +388,40 @@ $this->headTitle($title);
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        location.reload();
+                        if (typeof showSuccessToast === 'function') {
+                            showSuccessToast('🗑️ Tarefa excluída com sucesso!', 'Concluído!');
+                        }
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        alert('Erro: ' + data.message);
+                        // Aqui é onde aparecerá a mensagem amigável sobre os 5 dias
+                        if (typeof showErrorToast === 'function') {
+                            showErrorToast(data.message || '😓 Algo não saiu como esperado.', 'Ops!');
+                        } else {
+                            alert('Erro: ' + data.message);
+                        }
                     }
                 })
                 .catch(error => {
-                    alert('Erro ao excluir tarefa');
+                    if (typeof showErrorToast === 'function') {
+                        showErrorToast('😓 Erro de conexão. Tente novamente.', 'Erro de Rede');
+                    } else {
+                        alert('Erro ao excluir tarefa');
+                    }
                 });
         }
     }
+</script>
+
+<!-- Script para inicializar tooltips do Bootstrap -->
+<script>
+    // Inicializar todos os tooltips na página
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl, {
+                delay: { "show": 500, "hide": 100 },
+                placement: 'auto'
+            });
+        });
+    });
 </script>

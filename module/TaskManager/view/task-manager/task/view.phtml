@@ -86,15 +86,58 @@ $this->headTitle($title);
                     <?php endif; ?>
                 </div>
                 <div class="card-footer">
+                    <!-- Avisos sobre restrições da tarefa -->
+                    <?php 
+                    $hasRestrictions = false;
+                    $restrictions = [];
+                    
+                    if ($task['status'] !== 'pending') {
+                        $hasRestrictions = true;
+                        $restrictions[] = 'Tarefa não pode ser editada ou excluída (status: ' . $availableStatuses[$task['status']] . ')';
+                    }
+                    
+                    if ($task['status'] === 'pending') {
+                        $createdAt = new DateTime($task['created_at']);
+                        $now = new DateTime();
+                        $daysSinceCreation = $now->diff($createdAt)->days;
+                        if ($daysSinceCreation < 5) {
+                            $hasRestrictions = true;
+                            $remainingDays = 5 - $daysSinceCreation;
+                            $restrictions[] = "Exclusão disponível em {$remainingDays} dia(s)";
+                        }
+                    }
+                    ?>
+                    
+                    <?php if ($hasRestrictions): ?>
+                        <div class="alert alert-info py-2 mb-3">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Informações sobre esta tarefa:</strong><br>
+                            <?php foreach ($restrictions as $restriction): ?>
+                                • <?= $this->escapeHtml($restriction) ?><br>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="d-flex justify-content-between">
                         <a href="<?= $this->url('task-manager') ?>" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Voltar
                         </a>
                         <div>
-                            <a href="<?= $this->url('task-manager/edit', ['id' => $task['id']]) ?>"
-                                class="btn btn-outline-primary me-2">
-                                <i class="fas fa-edit"></i> Editar
-                            </a>
+                            <?php if ($task['status'] === 'pending'): ?>
+                                <a href="<?= $this->url('task-manager/edit', ['id' => $task['id']]) ?>"
+                                    class="btn btn-outline-primary me-2">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                            <?php else: ?>
+                                <button type="button" class="btn btn-outline-primary me-2 disabled position-relative" 
+                                    title="Apenas tarefas pendentes podem ser editadas"
+                                    data-bs-toggle="tooltip" data-bs-placement="top">
+                                    <i class="fas fa-edit"></i> Editar
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                                        <i class="fas fa-lock" style="font-size: 0.7em;"></i>
+                                    </span>
+                                </button>
+                            <?php endif; ?>
 
                             <?php if (!$task['is_completed']): ?>
                                 <button type="button" class="btn btn-success me-2"
@@ -108,10 +151,40 @@ $this->headTitle($title);
                                 <i class="fas fa-copy"></i> Duplicar
                             </button>
 
-                            <button type="button" class="btn btn-danger"
-                                onclick="deleteTask(<?= $task['id'] ?>)">
-                                <i class="fas fa-trash"></i> Excluir
-                            </button>
+                            <?php 
+                            // Verificar se pode excluir: status pending + mais de 5 dias
+                            $canDelete = $task['status'] === 'pending';
+                            $createdAt = new DateTime($task['created_at']);
+                            $now = new DateTime();
+                            $daysSinceCreation = $now->diff($createdAt)->days;
+                            $ageRequirementMet = $daysSinceCreation >= 5;
+                            $canDelete = $canDelete && $ageRequirementMet;
+                            ?>
+                            
+                            <?php if ($canDelete): ?>
+                                <button type="button" class="btn btn-danger"
+                                    onclick="deleteTask(<?= $task['id'] ?>)">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </button>
+                            <?php else: ?>
+                                <?php 
+                                $tooltip = '';
+                                if ($task['status'] !== 'pending') {
+                                    $tooltip = 'Apenas tarefas pendentes podem ser excluídas';
+                                } elseif (!$ageRequirementMet) {
+                                    $remainingDays = 5 - $daysSinceCreation;
+                                    $tooltip = "Aguarde mais {$remainingDays} dia(s) para excluir";
+                                }
+                                ?>
+                                <button type="button" class="btn btn-danger disabled position-relative" 
+                                    title="<?= $this->escapeHtmlAttr($tooltip) ?>"
+                                    data-bs-toggle="tooltip" data-bs-placement="top">
+                                    <i class="fas fa-trash"></i> Excluir
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white">
+                                        <i class="fas fa-lock" style="font-size: 0.7em;"></i>
+                                    </span>
+                                </button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -188,4 +261,18 @@ $this->headTitle($title);
                 });
         }
     }
+</script>
+
+<!-- Script para inicializar tooltips do Bootstrap -->
+<script>
+    // Inicializar todos os tooltips na página
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl, {
+                delay: { "show": 500, "hide": 100 },
+                placement: 'auto'
+            });
+        });
+    });
 </script>

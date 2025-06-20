@@ -211,14 +211,18 @@ PUT /api/tasks/update/1
 }
 ```
 **Resposta esperada**: Erro 403 - Operação não permitida
+```json
+{
+    "success": false,
+    "message": "🔒 Esta tarefa não pode ser editada porque está com status 'Concluída'. Apenas tarefas 'Pendentes' podem ser modificadas.\n\n💡 Motivo: Tarefas com outros status são protegidas para manter a integridade do histórico do projeto.",
+    "errors": {
+        "operation": ["🔒 Esta tarefa não pode ser editada porque está com status 'Concluída'. Apenas tarefas 'Pendentes' podem ser modificadas.\n\n💡 Motivo: Tarefas com outros status são protegidas para manter a integridade do histórico do projeto."]
+    },
+    "error_code": "OPERATION_NOT_ALLOWED"
+}
+```
 
 ### 8. Teste de Exclusão de Tarefa com Status Não-Pending
-```json
-DELETE /api/tasks/delete/1
-```
-**Resposta esperada**: Erro 403 - Operação não permitida (se a tarefa não estiver com status "pending")
-
-### 9. Teste de Exclusão de Tarefa Muito Recente (menos de 5 dias)
 ```json
 DELETE /api/tasks/delete/1
 ```
@@ -226,9 +230,9 @@ DELETE /api/tasks/delete/1
 ```json
 {
     "success": false,
-    "message": "Operação não permitida",
+    "message": "🔒 Esta tarefa não pode ser excluída porque está com status 'Em Andamento'. Apenas tarefas 'Pendentes' podem ser removidas.\n\n🛡️ Proteção: Tarefas que já foram iniciadas, concluídas ou canceladas contêm informações valiosas do histórico do projeto.",
     "errors": {
-        "operation": ["Tarefas só podem ser excluídas após 5 dias da criação. Aguarde mais 3 dia(s)"]
+        "operation": ["🔒 Esta tarefa não pode ser excluída porque está com status 'Em Andamento'. Apenas tarefas 'Pendentes' podem ser removidas.\n\n🛡️ Proteção: Tarefas que já foram iniciadas, concluídas ou canceladas contêm informações valiosas do histórico do projeto."]
     },
     "error_code": "OPERATION_NOT_ALLOWED"
 }

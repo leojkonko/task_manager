@@ -22,14 +22,17 @@ class ToastManager {
         const iconClass = this.getIconClass(type);
         const bgClass = this.getBgClass(type);
         
+        // Processar quebras de linha em mensagens longas
+        const formattedMessage = message.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+        
         const toastHtml = `
-            <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true" style="max-width: 500px;">
                 <div class="d-flex">
-                    <div class="toast-body d-flex align-items-center">
-                        <i class="${iconClass} me-2"></i>
-                        <div>
-                            ${title ? `<div class="fw-bold">${title}</div>` : ''}
-                            <div>${message}</div>
+                    <div class="toast-body d-flex align-items-start">
+                        <i class="${iconClass} me-2 mt-1"></i>
+                        <div style="line-height: 1.4;">
+                            ${title ? `<div class="fw-bold mb-1">${title}</div>` : ''}
+                            <div>${formattedMessage}</div>
                         </div>
                     </div>
                     <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
@@ -41,8 +44,12 @@ class ToastManager {
         container.insertAdjacentHTML('beforeend', toastHtml);
         
         const toastElement = document.getElementById(toastId);
+        
+        // Ajustar duração baseada no comprimento da mensagem
+        const adjustedDuration = Math.max(duration, Math.min(message.length * 50, 15000));
+        
         const toast = new bootstrap.Toast(toastElement, {
-            delay: duration,
+            delay: adjustedDuration,
             autohide: true
         });
         

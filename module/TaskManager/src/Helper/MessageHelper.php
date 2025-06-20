@@ -36,9 +36,10 @@ class MessageHelper
             'not_found' => "😕 Ops! A tarefa que você está procurando não foi encontrada.",
             'validation_error' => "⚠️ Verifique os dados informados. Alguns campos precisam de atenção:",
             'weekday_only' => "📅 Que pena! As tarefas só podem ser criadas durante os dias úteis (segunda a sexta-feira).",
-            'pending_only_update' => "🔒 Esta tarefa não pode ser editada porque não está mais pendente. Apenas tarefas com status 'Pendente' podem ser modificadas.",
-            'pending_only_delete' => "🔒 Esta tarefa não pode ser excluída porque não está com status 'Pendente'.",
-            'too_recent_delete' => "⏰ Esta tarefa é muito recente para ser excluída. Aguarde alguns dias antes de tentar novamente.",
+            'pending_only_update' => "🔒 Esta tarefa não pode ser editada porque seu status atual não permite modificações. Apenas tarefas com status 'Pendente' podem ser editadas.\n\n💡 Dica: Tarefas concluídas, canceladas ou em andamento são protegidas contra alterações para manter a integridade dos dados.",
+            'pending_only_delete' => "🔒 Esta tarefa não pode ser excluída porque seu status atual não permite a remoção. Apenas tarefas com status 'Pendente' podem ser excluídas.\n\n💡 Motivo: Tarefas que já estão em andamento, concluídas ou canceladas contêm informações importantes do histórico do projeto.",
+            'too_recent_delete' => "⏰ Esta tarefa é muito recente para ser excluída. Por questões de segurança, aguarde alguns dias antes de tentar novamente.\n\n🛡️ Esta regra previne exclusões acidentais de tarefas recém-criadas.",
+            'status_protection_info' => "🛡️ Proteção de Status: Esta operação só é permitida para tarefas com status 'Pendente'. Tarefas com outros status são protegidas para preservar o histórico do projeto.",
             'general_error' => "😓 Algo não saiu como esperado. Tente novamente em alguns instantes.",
             'form_invalid' => "📝 Por favor, verifique as informações do formulário e tente novamente."
         ];
@@ -46,7 +47,7 @@ class MessageHelper
         $message = $messages[$type] ?? $messages['general_error'];
         
         if ($context) {
-            $message .= " " . $context;
+            $message .= "\n\n" . $context;
         }
 
         return $message;

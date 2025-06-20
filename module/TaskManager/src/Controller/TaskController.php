@@ -40,7 +40,7 @@ class TaskController extends AbstractActionController
 
         $filters = [
             'status' => $this->params()->fromQuery('status'),
-            'priority' => $this->params()->fromQuery('priority',
+            'priority' => $this->params()->fromQuery('priority'),
             'category_id' => $this->params()->fromQuery('category_id'),
             'search' => $this->params()->fromQuery('search'),
             'order_by' => $this->params()->fromQuery('order_by', 'created_at'),
@@ -259,6 +259,16 @@ class TaskController extends AbstractActionController
             return $this->redirect()->toRoute('task-manager');
         }
 
+        // VERIFICAR PRIMEIRO SE A TAREFA PODE SER EDITADA (ANTES DE MOSTRAR O FORMULÁRIO)
+        $operationErrors = TaskBackendValidator::validateTaskUpdate($task->getStatus());
+        if (!empty($operationErrors)) {
+            // Se não pode editar, mostrar erro e redirecionar
+            foreach ($operationErrors as $error) {
+                $this->flashMessenger()->addErrorMessage($error);
+            }
+            return $this->redirect()->toRoute('task-manager/view', ['id' => $id]);
+        }
+
         $form = new TaskForm();
         $form->get('submit')->setValue('Atualizar Tarefa');
         $form->populateFromTask($task);
@@ -271,13 +281,15 @@ class TaskController extends AbstractActionController
             // Primeiro: sanitizar dados de entrada
             $sanitizedData = TaskBackendValidator::sanitize($postData);
 
-            // Verificar se a tarefa pode ser atualizada (status pending)
+            // Verificar novamente se a tarefa pode ser atualizada (dupla verificação para segurança)
             $operationErrors = TaskBackendValidator::validateTaskUpdate($task->getStatus());
             if (!empty($operationErrors)) {
                 if ($request->getHeader('X-Requested-With')) {
+                    // Para requisições AJAX, usar a primeira mensagem específica
+                    $mainError = reset($operationErrors);
                     return new JsonModel([
                         'success' => false,
-                        'message' => 'Operação não permitida',
+                        'message' => $mainError,
                         'errors' => ['operation' => $operationErrors]
                     ]);
                 }
@@ -286,12 +298,7 @@ class TaskController extends AbstractActionController
                     $this->flashMessenger()->addErrorMessage($error);
                 }
 
-                return new ViewModel([
-                    'form' => $form,
-                    'task' => $task->toArray(),
-                    'availableStatuses' => Task::getAvailableStatuses(),
-                    'availablePriorities' => Task::getAvailablePriorities(),
-                ]);
+                return $this->redirect()->toRoute('task-manager/view', ['id' => $id]);
             }
 
             // Segundo: validar dados no backend (não é criação, então isCreate = false)
@@ -419,18 +426,21 @@ class TaskController extends AbstractActionController
         if ($request instanceof Request && $request->isPost()) {
             // Verificar se a tarefa pode ser excluída (status pending e idade > 5 dias)
             $operationErrors = TaskBackendValidator::validateTaskDeletion(
-                $task->getStatus(), 
+                $task->getStatus(),
                 $task->getCreatedAt()
             );
             if (!empty($operationErrors)) {
                 if ($request->getHeader('X-Requested-With')) {
+                    // Para requisições AJAX, usar a primeira mensagem específica
+                    $mainError = reset($operationErrors);
                     return new JsonModel([
                         'success' => false,
-                        'message' => 'Operação não permitida',
+                        'message' => $mainError,
                         'errors' => ['operation' => $operationErrors]
                     ]);
                 }
 
+                // Para requisições normais, mostrar cada erro específico
                 foreach ($operationErrors as $error) {
                     $this->flashMessenger()->addErrorMessage($error);
                 }
@@ -628,19 +638,19 @@ class TaskController extends AbstractActionController
         if (strpos($technicalMessage, 'fim de semana') !== false) {
             return MessageHelper::getErrorMessage('weekday_only');
         }
-        
+
         if (strpos($technicalMessage, 'pending') !== false && strpos($technicalMessage, 'atualizada') !== false) {
             return MessageHelper::getErrorMessage('pending_only_update');
         }
-        
+
         if (strpos($technicalMessage, 'pending') !== false && strpos($technicalMessage, 'excluída') !== false) {
             return MessageHelper::getErrorMessage('pending_only_delete');
         }
-        
+
         if (strpos($technicalMessage, '5 dias') !== false) {
             return MessageHelper::getErrorMessage('too_recent_delete');
         }
-        
+
         // Retornar mensagem genérica se não for erro conhecido
         return MessageHelper::getErrorMessage('general_error');
     }

@@ -288,11 +288,34 @@ class TaskBackendValidator
     {
         $errors = [];
 
-        $currentDay = (new DateTime())->format('N'); // Dia da semana (1 = segunda, 7 = domingo)
+        $now = new DateTime();
+        $currentDay = (int)$now->format('N'); // Dia da semana (1 = segunda, 7 = domingo)
 
         // Verifica se o dia atual é sábado (6) ou domingo (7)
-        if ($currentDay == 6 || $currentDay == 7) {
-            $errors[] = 'Não é permitido criar tarefas durante o fim de semana';
+        if ($currentDay >= 6) {
+            $dayNames = [
+                6 => 'Sábado',
+                7 => 'Domingo'
+            ];
+            
+            // Calcular próximo dia útil
+            $nextWeekday = clone $now;
+            while ((int)$nextWeekday->format('N') >= 6) {
+                $nextWeekday->add(new \DateInterval('P1D'));
+            }
+            
+            $nextWeekdayNames = [
+                1 => 'Segunda-feira',
+                2 => 'Terça-feira',
+                3 => 'Quarta-feira',
+                4 => 'Quinta-feira',
+                5 => 'Sexta-feira'
+            ];
+            
+            $nextWeekdayName = $nextWeekdayNames[(int)$nextWeekday->format('N')];
+            $nextWeekdayDate = $nextWeekday->format('d/m/Y');
+            
+            $errors[] = "📅 Tarefas só podem ser criadas em dias úteis (segunda a sexta-feira). Hoje é {$dayNames[$currentDay]} - tente novamente na {$nextWeekdayName} ({$nextWeekdayDate}).";
         }
 
         return $errors;
@@ -307,7 +330,15 @@ class TaskBackendValidator
         $errors = [];
 
         if ($currentStatus !== 'pending') {
-            $errors[] = 'Apenas tarefas com status "pending" podem ser atualizadas';
+            $statusNames = [
+                'in_progress' => 'Em Andamento',
+                'completed' => 'Concluída',
+                'cancelled' => 'Cancelada'
+            ];
+            
+            $currentStatusName = $statusNames[$currentStatus] ?? $currentStatus;
+            
+            $errors[] = "🔒 Esta tarefa não pode ser editada porque está com status '{$currentStatusName}'. Apenas tarefas 'Pendentes' podem ser modificadas.\n\n💡 Motivo: Tarefas com outros status são protegidas para manter a integridade do histórico do projeto.";
         }
 
         return $errors;
@@ -323,7 +354,15 @@ class TaskBackendValidator
         $errors = [];
 
         if ($currentStatus !== 'pending') {
-            $errors[] = 'Apenas tarefas com status "pending" podem ser excluídas';
+            $statusNames = [
+                'in_progress' => 'Em Andamento',
+                'completed' => 'Concluída',
+                'cancelled' => 'Cancelada'
+            ];
+            
+            $currentStatusName = $statusNames[$currentStatus] ?? $currentStatus;
+            
+            $errors[] = "🔒 Esta tarefa não pode ser excluída porque está com status '{$currentStatusName}'. Apenas tarefas 'Pendentes' podem ser removidas.\n\n🛡️ Proteção: Tarefas que já foram iniciadas, concluídas ou canceladas contêm informações valiosas do histórico do projeto.";
         }
 
         // Validar se a tarefa foi criada há mais de 5 dias

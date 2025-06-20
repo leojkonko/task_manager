@@ -328,9 +328,12 @@ class ApiController extends AbstractRestfulController
                 $task->getCreatedAt()
             );
             if (!empty($operationErrors)) {
+                // Usar a primeira mensagem de erro (mais específica) como mensagem principal
+                $mainError = reset($operationErrors);
+                
                 return $this->createJsonResponse([
                     'success' => false,
-                    'message' => 'Operação não permitida',
+                    'message' => $mainError, // Usar mensagem específica diretamente
                     'errors' => ['operation' => $operationErrors],
                     'error_code' => 'OPERATION_NOT_ALLOWED'
                 ], 403);
