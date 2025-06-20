@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TaskManager\Service;
 
 use TaskManager\Entity\Task;
-use TaskManager\Repository\TaskRepository;
+use TaskManager\Repository\TaskRepositoryInterface;
 use DateTime;
 
 /**
@@ -13,9 +13,9 @@ use DateTime;
  */
 class TaskService
 {
-    private TaskRepository $taskRepository;
+    private TaskRepositoryInterface $taskRepository;
 
-    public function __construct(TaskRepository $taskRepository)
+    public function __construct(TaskRepositoryInterface $taskRepository)
     {
         $this->taskRepository = $taskRepository;
     }
@@ -104,11 +104,27 @@ class TaskService
     }
 
     /**
+     * Alias para getTaskById (para compatibilidade com testes)
+     */
+    public function getTask(int $id): ?Task
+    {
+        return $this->getTaskById($id);
+    }
+
+    /**
      * Busca tarefas de um usuário
      */
     public function getUserTasks(int $userId, array $filters = []): array
     {
         return $this->taskRepository->findByUserId($userId, $filters);
+    }
+
+    /**
+     * Alias para getUserTasks (para compatibilidade)
+     */
+    public function getTasks(int $userId, array $filters = []): array
+    {
+        return $this->getUserTasks($userId, $filters);
     }
 
     /**
@@ -120,11 +136,52 @@ class TaskService
     }
 
     /**
-     * Exclui uma tarefa
+     * Alias para getUserTasksWithPagination
      */
-    public function deleteTask(int $id): bool
+    public function getTasksWithPagination(int $userId, int $page = 1, int $limit = 10, array $filters = []): array
     {
-        return $this->taskRepository->delete($id);
+        return $this->getUserTasksWithPagination($userId, $page, $limit, $filters);
+    }
+
+    /**
+     * Busca tarefas por texto
+     */
+    public function searchTasks(string $searchTerm, int $userId = null): array
+    {
+        if (strlen($searchTerm) < 3) {
+            throw new \InvalidArgumentException('O termo de busca deve ter pelo menos 3 caracteres');
+        }
+
+        $filters = ['search' => $searchTerm];
+        if ($userId !== null) {
+            return $this->taskRepository->findByUserId($userId, $filters);
+        }
+
+        return $this->taskRepository->search($searchTerm);
+    }
+
+    /**
+     * Busca tarefas por prioridade
+     */
+    public function getTasksByPriority(int $userId, string $priority): array
+    {
+        return $this->taskRepository->findByPriority($priority, $userId);
+    }
+
+    /**
+     * Arquiva uma tarefa
+     */
+    public function archiveTask(int $id): bool
+    {
+        return $this->taskRepository->archive($id);
+    }
+
+    /**
+     * Restaura uma tarefa arquivada
+     */
+    public function restoreTask(int $id): bool
+    {
+        return $this->taskRepository->restore($id);
     }
 
     /**
@@ -162,7 +219,7 @@ class TaskService
      */
     public function getOverdueTasks(int $userId): array
     {
-        return $this->taskRepository->findOverdueTasks($userId);
+        return $this->taskRepository->findOverdueTasks(['user_id' => $userId]);
     }
 
     /**
@@ -338,5 +395,217 @@ class TaskService
 
         $task->setCategoryId($categoryId);
         return $this->taskRepository->save($task);
+    }
+
+    /**
+     * Exclui uma tarefa
+     */
+    public function deleteTask(int $id): bool
+    {
+        return $this->taskRepository->delete($id);
+    }
+
+    /**
+     * Operações em lote - deletar múltiplas tarefas
+     */
+    public function bulkDeleteTasks(array $taskIds): int
+    {
+        $deletedCount = 0;
+        foreach ($taskIds as $id) {
+            if ($this->deleteTask($id)) {
+                $deletedCount++;
+            }
+        }
+        return $deletedCount;
+    }
+
+    /**
+     * Operações em lote - atualizar múltiplas tarefas
+     */
+    public function bulkUpdateTasks(array $taskIds, array $updateData): int
+    {
+        $updatedCount = 0;
+        foreach ($taskIds as $id) {
+            if ($this->updateTask($id, $updateData)) {
+                $updatedCount++;
+            }
+        }
+        return $updatedCount;
+    }
+
+    /**
+     * Cria uma nova tarefa (versão que retorna array para compatibilidade com testes)
+     */
+    public function createTaskWithResult(array $data): array
+    {
+        try {
+            $task = $this->createTask($data);
+            return [
+                'success' => true,
+                'id' => $task->getId(),
+                'message' => 'Tarefa criada com sucesso',
+                'task' => $task
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $this->parseValidationErrors($e->getMessage())
+            ];
+        }
+    }
+
+    /**
+     * Atualiza uma tarefa (versão que retorna array para compatibilidade com testes)
+     */
+    public function updateTaskWithResult(int $id, array $data, int $userId = null): array
+    {
+        try {
+            $task = $this->updateTask($id, $data);
+            if ($task) {
+                return [
+                    'success' => true,
+                    'message' => 'Tarefa atualizada com sucesso',
+                    'task' => $task
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Tarefa não encontrada'
+                ];
+            }
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $this->parseValidationErrors($e->getMessage())
+            ];
+        }
+    }
+
+    /**
+     * Exclui uma tarefa (versão que retorna array para compatibilidade com testes)
+     */
+    public function deleteTaskWithResult(int $id, int $userId = null): array
+    {
+        try {
+            $success = $this->deleteTask($id);
+            if ($success) {
+                return [
+                    'success' => true,
+                    'message' => 'Tarefa excluída com sucesso'
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Tarefa não encontrada'
+                ];
+            }
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Marca tarefa como concluída (versão que retorna array para testes)
+     */
+    public function completeTaskWithResult(int $id, int $userId = null): array
+    {
+        try {
+            $task = $this->completeTask($id);
+            if ($task) {
+                return [
+                    'success' => true,
+                    'message' => 'Tarefa marcada como concluída',
+                    'task' => $task
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Tarefa não encontrada'
+                ];
+            }
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Duplica uma tarefa (versão que retorna array para testes)
+     */
+    public function duplicateTaskWithResult(int $id, int $userId = null): array
+    {
+        try {
+            $task = $this->duplicateTask($id);
+            if ($task) {
+                return [
+                    'success' => true,
+                    'new_task_id' => $task->getId(),
+                    'message' => 'Tarefa duplicada com sucesso',
+                    'task' => $task
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Tarefa não encontrada'
+                ];
+            }
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Busca tarefas com paginação (versão que retorna array estruturado)
+     */
+    public function getTasksWithResult(array $filters, int $page, int $limit, int $userId): array
+    {
+        try {
+            $result = $this->getUserTasksWithPagination($userId, $page, $limit, $filters);
+            return [
+                'success' => true,
+                'tasks' => $result['tasks'],
+                'pagination' => $result
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'tasks' => [],
+                'pagination' => ['page' => $page, 'limit' => $limit, 'total' => 0, 'total_pages' => 0]
+            ];
+        }
+    }
+
+    /**
+     * Parse validation errors from exception message
+     */
+    private function parseValidationErrors(string $message): array
+    {
+        $errors = [];
+        
+        if (strpos($message, 'título') !== false) {
+            $errors['title'] = [$message];
+        }
+        if (strpos($message, 'descrição') !== false) {
+            $errors['description'] = [$message];
+        }
+        if (strpos($message, 'prioridade') !== false) {
+            $errors['priority'] = [$message];
+        }
+        if (strpos($message, 'usuário') !== false) {
+            $errors['user_id'] = [$message];
+        }
+        
+        return $errors ?: ['general' => [$message]];
     }
 }

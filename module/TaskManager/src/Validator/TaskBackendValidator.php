@@ -297,13 +297,13 @@ class TaskBackendValidator
                 6 => 'Sábado',
                 7 => 'Domingo'
             ];
-            
+
             // Calcular próximo dia útil
             $nextWeekday = clone $now;
             while ((int)$nextWeekday->format('N') >= 6) {
                 $nextWeekday->add(new \DateInterval('P1D'));
             }
-            
+
             $nextWeekdayNames = [
                 1 => 'Segunda-feira',
                 2 => 'Terça-feira',
@@ -311,10 +311,10 @@ class TaskBackendValidator
                 4 => 'Quinta-feira',
                 5 => 'Sexta-feira'
             ];
-            
+
             $nextWeekdayName = $nextWeekdayNames[(int)$nextWeekday->format('N')];
             $nextWeekdayDate = $nextWeekday->format('d/m/Y');
-            
+
             $errors[] = "📅 Tarefas só podem ser criadas em dias úteis (segunda a sexta-feira). Hoje é {$dayNames[$currentDay]} - tente novamente na {$nextWeekdayName} ({$nextWeekdayDate}).";
         }
 
@@ -335,9 +335,9 @@ class TaskBackendValidator
                 'completed' => 'Concluída',
                 'cancelled' => 'Cancelada'
             ];
-            
+
             $currentStatusName = $statusNames[$currentStatus] ?? $currentStatus;
-            
+
             $errors[] = "🔒 Esta tarefa não pode ser editada porque está com status '{$currentStatusName}'. Apenas tarefas 'Pendentes' podem ser modificadas.\n\n💡 Motivo: Tarefas com outros status são protegidas para manter a integridade do histórico do projeto.";
         }
 
@@ -359,9 +359,9 @@ class TaskBackendValidator
                 'completed' => 'Concluída',
                 'cancelled' => 'Cancelada'
             ];
-            
+
             $currentStatusName = $statusNames[$currentStatus] ?? $currentStatus;
-            
+
             $errors[] = "🔒 Esta tarefa não pode ser excluída porque está com status '{$currentStatusName}'. Apenas tarefas 'Pendentes' podem ser removidas.\n\n🛡️ Proteção: Tarefas que já foram iniciadas, concluídas ou canceladas contêm informações valiosas do histórico do projeto.";
         }
 
@@ -406,7 +406,7 @@ class TaskBackendValidator
         $errors = [];
 
         $statusErrors = self::validateTaskDeletion(
-            $currentTask->getStatus(), 
+            $currentTask->getStatus(),
             $currentTask->getCreatedAt()
         );
         if (!empty($statusErrors)) {

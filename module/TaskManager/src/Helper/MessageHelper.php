@@ -45,7 +45,7 @@ class MessageHelper
         ];
 
         $message = $messages[$type] ?? $messages['general_error'];
-        
+
         if ($context) {
             $message .= "\n\n" . $context;
         }
@@ -89,7 +89,7 @@ class MessageHelper
     {
         $classes = [
             'success' => 'alert-success',
-            'error' => 'alert-danger', 
+            'error' => 'alert-danger',
             'warning' => 'alert-warning',
             'info' => 'alert-info'
         ];

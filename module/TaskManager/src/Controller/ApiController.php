@@ -324,13 +324,13 @@ class ApiController extends AbstractRestfulController
 
             // Verificar se a tarefa pode ser excluída (status pending e idade > 5 dias)
             $operationErrors = TaskBackendValidator::validateTaskDeletion(
-                $task->getStatus(), 
+                $task->getStatus(),
                 $task->getCreatedAt()
             );
             if (!empty($operationErrors)) {
                 // Usar a primeira mensagem de erro (mais específica) como mensagem principal
                 $mainError = reset($operationErrors);
-                
+
                 return $this->createJsonResponse([
                     'success' => false,
                     'message' => $mainError, // Usar mensagem específica diretamente

@@ -182,13 +182,13 @@ $this->headTitle($title);
         // Usar mensagem de confirmação personalizada
         const taskTitle = '<?= addslashes($task['title']) ?>';
         const confirmMessage = `🗑️ Tem certeza que deseja excluir "${taskTitle}"?\n\nEsta ação não pode ser desfeita.`;
-        
+
         if (confirm(confirmMessage)) {
             // Mostrar loading toast
             if (typeof showInfoToast === 'function') {
                 showInfoToast('⏳ Processando exclusão...', 'Aguarde');
             }
-            
+
             fetch(`/tasks/delete/${id}`, {
                     method: 'POST',
                     headers: {
@@ -204,7 +204,7 @@ $this->headTitle($title);
                         } else {
                             alert('Tarefa excluída com sucesso!');
                         }
-                        
+
                         // Redirecionar após um pequeno delay para mostrar o toast
                         setTimeout(() => {
                             window.location.href = '/tasks';

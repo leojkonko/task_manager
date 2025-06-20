@@ -46,7 +46,7 @@ class TaskBackendValidatorTest extends TestCase
 
         // Remove erro de dias úteis se existir para focar nos outros campos
         unset($errors['creation_time']);
-        
+
         $this->assertEmpty($errors);
     }
 
@@ -413,13 +413,15 @@ class TaskBackendValidatorTest extends TestCase
             ];
 
             $errors = TaskBackendValidator::validate($data, false);
-            
+
             // Remove possíveis erros de dias úteis para focar no formato da data
             unset($errors['creation_time']);
-            
+
             // A data deve ser aceita (não deve ter erro de formato)
-            if (!isset($errors['due_date']) || 
-                !in_array('Data de vencimento inválida. Use o formato Y-m-d H:i:s ou Y-m-d\\TH:i', $errors['due_date'])) {
+            if (
+                !isset($errors['due_date']) ||
+                !in_array('Data de vencimento inválida. Use o formato Y-m-d H:i:s ou Y-m-d\\TH:i', $errors['due_date'])
+            ) {
                 $hasValidFormat = true;
             }
         }
@@ -471,7 +473,7 @@ class TaskBackendValidatorTest extends TestCase
         ];
 
         $errors = TaskBackendValidator::validate($data, false);
-        
+
         // Remove possíveis erros de dias úteis
         unset($errors['creation_time']);
 

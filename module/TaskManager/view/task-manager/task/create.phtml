@@ -18,7 +18,7 @@ $this->headTitle($title);
                     $isWeekend = $dayOfWeek >= 6; // 6 = sábado, 7 = domingo
                     $dayNames = [
                         1 => 'Segunda-feira',
-                        2 => 'Terça-feira', 
+                        2 => 'Terça-feira',
                         3 => 'Quarta-feira',
                         4 => 'Quinta-feira',
                         5 => 'Sexta-feira',
@@ -26,7 +26,7 @@ $this->headTitle($title);
                         7 => 'Domingo'
                     ];
                     ?>
-                    
+
                     <!-- Aviso sobre dias úteis -->
                     <?php if ($isWeekend): ?>
                         <?php
@@ -42,11 +42,11 @@ $this->headTitle($title);
                                 <strong>Hoje é <?= $dayNames[$dayOfWeek] ?></strong> - Tarefas só podem ser criadas em dias úteis (segunda a sexta-feira).
                             </p>
                             <p class="mb-0">
-                                <i class="fas fa-info-circle"></i> 
+                                <i class="fas fa-info-circle"></i>
                                 <strong>Próximo dia útil:</strong> <?= $dayNames[(int)$nextWeekday->format('N')] ?>, <?= $nextWeekday->format('d/m/Y') ?>
                             </p>
                         </div>
-                        
+
                         <!-- Desabilitar o formulário -->
                         <div class="text-center p-4">
                             <i class="fas fa-business-time fa-3x text-muted mb-3"></i>

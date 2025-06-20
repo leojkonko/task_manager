@@ -276,4 +276,105 @@ class TaskTable
         }
         return $tasks;
     }
+
+    /**
+     * Busca tarefas com filtros
+     */
+    public function fetchWithFilters(array $filters): array
+    {
+        $select = $this->tableGateway->getSql()->select();
+        $where = new Where();
+
+        // Aplicar filtros
+        foreach ($filters as $field => $value) {
+            if ($value !== null && $value !== '') {
+                switch ($field) {
+                    case 'search':
+                        $where->nest()
+                            ->like('title', '%' . $value . '%')
+                            ->or
+                            ->like('description', '%' . $value . '%')
+                            ->unnest();
+                        break;
+                    case 'status':
+                    case 'priority':
+                    case 'user_id':
+                    case 'category_id':
+                        $where->equalTo($field, $value);
+                        break;
+                    case 'due_date':
+                        $where->like('due_date', $value . '%');
+                        break;
+                }
+            }
+        }
+
+        $select->where($where)->order('created_at DESC');
+        
+        $resultSet = $this->tableGateway->selectWith($select);
+        return $this->resultSetToTaskArray($resultSet);
+    }
+
+    /**
+     * Busca tarefas por texto
+     */
+    public function searchTasks(string $searchTerm): array
+    {
+        return $this->fetchWithFilters(['search' => $searchTerm]);
+    }
+
+    /**
+     * Conta tarefas
+     */
+    public function countTasks(array $criteria = []): int
+    {
+        $select = $this->tableGateway->getSql()->select();
+        $select->columns(['count' => new Expression('COUNT(*)')]);
+        
+        if (!empty($criteria)) {
+            $select->where($criteria);
+        }
+        
+        $resultSet = $this->tableGateway->selectWith($select);
+        $result = $resultSet->current();
+        
+        return (int) $result['count'];
+    }
+
+    /**
+     * Arquiva uma tarefa
+     */
+    public function archiveTask(int $id): bool
+    {
+        $data = ['archived' => 1, 'archived_at' => date('Y-m-d H:i:s')];
+        $result = $this->tableGateway->update($data, ['id' => $id]);
+        return $result > 0;
+    }
+
+    /**
+     * Restaura uma tarefa arquivada
+     */
+    public function restoreTask(int $id): bool
+    {
+        $data = ['archived' => 0, 'archived_at' => null];
+        $result = $this->tableGateway->update($data, ['id' => $id]);
+        return $result > 0;
+    }
+
+    /**
+     * Atualiza status da tarefa
+     */
+    public function updateTaskStatus(int $id, string $status): bool
+    {
+        $data = ['status' => $status, 'updated_at' => date('Y-m-d H:i:s')];
+        
+        if ($status === Task::STATUS_COMPLETED) {
+            $data['completed_at'] = date('Y-m-d H:i:s');
+        } elseif ($status !== Task::STATUS_COMPLETED) {
+            $data['completed_at'] = null;
+        }
+        
+        $result = $this->tableGateway->update($data, ['id' => $id]);
+        return $result > 0;
+    }
 }

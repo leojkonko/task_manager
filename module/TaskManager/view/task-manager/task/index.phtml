@@ -14,9 +14,9 @@ $this->headTitle($title);
                 $dayOfWeek = (int)$today->format('N'); // 1 = segunda, 7 = domingo
                 $isWeekend = $dayOfWeek >= 6; // 6 = sábado, 7 = domingo
                 ?>
-                
+
                 <?php if ($isWeekend): ?>
-                    <button type="button" class="btn btn-primary disabled position-relative" 
+                    <button type="button" class="btn btn-primary disabled position-relative"
                         title="Tarefas só podem ser criadas em dias úteis (segunda a sexta-feira)"
                         data-bs-toggle="tooltip" data-bs-placement="left">
                         <i class="fas fa-plus"></i> Nova Tarefa
@@ -40,8 +40,11 @@ $this->headTitle($title);
                     $nextWeekday->add(new DateInterval('P1D'));
                 }
                 $nextWeekdayNames = [
-                    1 => 'Segunda-feira', 2 => 'Terça-feira', 3 => 'Quarta-feira',
-                    4 => 'Quinta-feira', 5 => 'Sexta-feira'
+                    1 => 'Segunda-feira',
+                    2 => 'Terça-feira',
+                    3 => 'Quarta-feira',
+                    4 => 'Quinta-feira',
+                    5 => 'Sexta-feira'
                 ];
                 $nextWeekdayName = $nextWeekdayNames[(int)$nextWeekday->format('N')];
                 ?>
@@ -159,15 +162,15 @@ $this->headTitle($title);
                                 </div>
                                 <div class="card-footer">
                                     <!-- Avisos sobre restrições da tarefa -->
-                                    <?php 
+                                    <?php
                                     $hasRestrictions = false;
                                     $restrictions = [];
-                                    
+
                                     if ($task['status'] !== 'pending') {
                                         $hasRestrictions = true;
                                         $restrictions[] = 'Tarefa não pode ser editada ou excluída (status: ' . $availableStatuses[$task['status']] . ')';
                                     }
-                                    
+
                                     if ($task['status'] === 'pending') {
                                         $createdAt = new DateTime($task['created_at']);
                                         $now = new DateTime();
@@ -179,7 +182,7 @@ $this->headTitle($title);
                                         }
                                     }
                                     ?>
-                                    
+
                                     <?php if ($hasRestrictions): ?>
                                         <div class="alert alert-warning alert-sm py-2 mb-2" style="font-size: 0.85em;">
                                             <i class="fas fa-info-circle"></i>
@@ -193,12 +196,12 @@ $this->headTitle($title);
                                     <div class="btn-group w-100" role="group">
                                         <a href="<?= $this->url('task-manager/view', ['id' => $task['id']]) ?>"
                                             class="btn btn-outline-primary btn-sm">Ver</a>
-                                        
+
                                         <?php if ($task['status'] === 'pending'): ?>
                                             <a href="<?= $this->url('task-manager/edit', ['id' => $task['id']]) ?>"
                                                 class="btn btn-outline-secondary btn-sm">Editar</a>
                                         <?php else: ?>
-                                            <button type="button" class="btn btn-outline-secondary btn-sm disabled position-relative" 
+                                            <button type="button" class="btn btn-outline-secondary btn-sm disabled position-relative"
                                                 title="Apenas tarefas pendentes podem ser editadas"
                                                 data-bs-toggle="tooltip" data-bs-placement="top">
                                                 Editar
@@ -217,8 +220,8 @@ $this->headTitle($title);
                                     <div class="btn-group w-100 mt-1" role="group">
                                         <button type="button" class="btn btn-outline-info btn-sm"
                                             onclick="duplicateTask(<?= $task['id'] ?>)">Duplicar</button>
-                                        
-                                        <?php 
+
+                                        <?php
                                         // Verificar se pode excluir: status pending + mais de 5 dias
                                         $canDelete = $task['status'] === 'pending';
                                         $createdAt = new DateTime($task['created_at']);
@@ -227,12 +230,12 @@ $this->headTitle($title);
                                         $ageRequirementMet = $daysSinceCreation >= 5;
                                         $canDelete = $canDelete && $ageRequirementMet;
                                         ?>
-                                        
+
                                         <?php if ($canDelete): ?>
                                             <button type="button" class="btn btn-outline-danger btn-sm"
                                                 onclick="deleteTask(<?= $task['id'] ?>)">Excluir</button>
                                         <?php else: ?>
-                                            <?php 
+                                            <?php
                                             $tooltip = '';
                                             $lockReason = '';
                                             if ($task['status'] !== 'pending') {
@@ -244,7 +247,7 @@ $this->headTitle($title);
                                                 $lockReason = $remainingDays . 'd';
                                             }
                                             ?>
-                                            <button type="button" class="btn btn-outline-danger btn-sm disabled position-relative" 
+                                            <button type="button" class="btn btn-outline-danger btn-sm disabled position-relative"
                                                 title="<?= $this->escapeHtmlAttr($tooltip) ?>"
                                                 data-bs-toggle="tooltip" data-bs-placement="top">
                                                 Excluir
@@ -292,13 +295,13 @@ $this->headTitle($title);
 <script>
     function completeTask(id) {
         const confirmMessage = '🏆 Marcar esta tarefa como concluída?';
-        
+
         if (confirm(confirmMessage)) {
             // Mostrar loading toast
             if (typeof showInfoToast === 'function') {
                 showInfoToast('⏳ Processando...', 'Aguarde');
             }
-            
+
             fetch(`/tasks/complete/${id}`, {
                     method: 'POST',
                     headers: {
@@ -332,13 +335,13 @@ $this->headTitle($title);
 
     function duplicateTask(id) {
         const confirmMessage = '📋 Duplicar esta tarefa?';
-        
+
         if (confirm(confirmMessage)) {
             // Mostrar loading toast
             if (typeof showInfoToast === 'function') {
                 showInfoToast('⏳ Duplicando tarefa...', 'Aguarde');
             }
-            
+
             fetch(`/tasks/duplicate/${id}`, {
                     method: 'POST',
                     headers: {
@@ -372,13 +375,13 @@ $this->headTitle($title);
 
     function deleteTask(id) {
         const confirmMessage = '🗑️ Tem certeza que deseja excluir esta tarefa?\n\nEsta ação não pode ser desfeita.';
-        
+
         if (confirm(confirmMessage)) {
             // Mostrar loading toast
             if (typeof showInfoToast === 'function') {
                 showInfoToast('⏳ Processando exclusão...', 'Aguarde');
             }
-            
+
             fetch(`/tasks/delete/${id}`, {
                     method: 'POST',
                     headers: {
@@ -417,9 +420,12 @@ $this->headTitle($title);
     // Inicializar todos os tooltips na página
     document.addEventListener('DOMContentLoaded', function() {
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl, {
-                delay: { "show": 500, "hide": 100 },
+                delay: {
+                    "show": 500,
+                    "hide": 100
+                },
                 placement: 'auto'
             });
         });

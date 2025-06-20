@@ -32,7 +32,7 @@ class TaskTest extends TestCase
     public function testTaskCreation(): void
     {
         $task = new Task();
-        
+
         $this->assertInstanceOf(Task::class, $task);
         $this->assertNull($task->getId());
         $this->assertEquals('pending', $task->getStatus());
@@ -52,7 +52,7 @@ class TaskTest extends TestCase
     {
         $this->task->setId(123);
         $this->assertEquals(123, $this->task->getId());
-        
+
         // Teste com null
         $this->task->setId(null);
         $this->assertNull($this->task->getId());
@@ -104,11 +104,11 @@ class TaskTest extends TestCase
         $description = 'Esta é uma descrição detalhada da tarefa';
         $this->task->setDescription($description);
         $this->assertEquals($description, $this->task->getDescription());
-        
+
         // Teste com null
         $this->task->setDescription(null);
         $this->assertNull($this->task->getDescription());
-        
+
         // Teste com string vazia (deve virar null)
         $this->task->setDescription('   ');
         $this->assertNull($this->task->getDescription());
@@ -129,7 +129,7 @@ class TaskTest extends TestCase
     public function testStatusSetterGetter(): void
     {
         $validStatuses = ['pending', 'in_progress', 'completed', 'cancelled'];
-        
+
         foreach ($validStatuses as $status) {
             $this->task->setStatus($status);
             $this->assertEquals($status, $this->task->getStatus());
@@ -149,7 +149,7 @@ class TaskTest extends TestCase
     public function testPrioritySetterGetter(): void
     {
         $validPriorities = ['low', 'medium', 'high', 'urgent'];
-        
+
         foreach ($validPriorities as $priority) {
             $this->task->setPriority($priority);
             $this->assertEquals($priority, $this->task->getPriority());
@@ -171,7 +171,7 @@ class TaskTest extends TestCase
         $dueDate = new DateTime('+7 days');
         $this->task->setDueDate($dueDate);
         $this->assertEquals($dueDate, $this->task->getDueDate());
-        
+
         // Teste com null
         $this->task->setDueDate(null);
         $this->assertNull($this->task->getDueDate());
@@ -185,7 +185,7 @@ class TaskTest extends TestCase
         $completedAt = new DateTime();
         $this->task->setCompletedAt($completedAt);
         $this->assertEquals($completedAt, $this->task->getCompletedAt());
-        
+
         // Teste com null
         $this->task->setCompletedAt(null);
         $this->assertNull($this->task->getCompletedAt());
@@ -209,7 +209,7 @@ class TaskTest extends TestCase
         $categoryId = 15;
         $this->task->setCategoryId($categoryId);
         $this->assertEquals($categoryId, $this->task->getCategoryId());
-        
+
         // Teste com null
         $this->task->setCategoryId(null);
         $this->assertNull($this->task->getCategoryId());
@@ -222,10 +222,10 @@ class TaskTest extends TestCase
     {
         $createdAt = new DateTime('2025-01-01 10:00:00');
         $updatedAt = new DateTime('2025-01-02 15:30:00');
-        
+
         $this->task->setCreatedAt($createdAt);
         $this->task->setUpdatedAt($updatedAt);
-        
+
         $this->assertEquals($createdAt, $this->task->getCreatedAt());
         $this->assertEquals($updatedAt, $this->task->getUpdatedAt());
     }
@@ -238,15 +238,15 @@ class TaskTest extends TestCase
         // Status pending - não completado
         $this->task->setStatus('pending');
         $this->assertFalse($this->task->isCompleted());
-        
+
         // Status in_progress - não completado
         $this->task->setStatus('in_progress');
         $this->assertFalse($this->task->isCompleted());
-        
+
         // Status completed - completado
         $this->task->setStatus('completed');
         $this->assertTrue($this->task->isCompleted());
-        
+
         // Status cancelled - não completado
         $this->task->setStatus('cancelled');
         $this->assertFalse($this->task->isCompleted());
@@ -259,10 +259,10 @@ class TaskTest extends TestCase
     {
         $this->task->setStatus('in_progress');
         $this->assertTrue($this->task->isInProgress());
-        
+
         $this->task->setStatus('pending');
         $this->assertFalse($this->task->isInProgress());
-        
+
         $this->task->setStatus('completed');
         $this->assertFalse($this->task->isInProgress());
     }
@@ -274,10 +274,10 @@ class TaskTest extends TestCase
     {
         $this->task->setStatus('pending');
         $this->assertTrue($this->task->isPending());
-        
+
         $this->task->setStatus('in_progress');
         $this->assertFalse($this->task->isPending());
-        
+
         $this->task->setStatus('completed');
         $this->assertFalse($this->task->isPending());
     }
@@ -290,17 +290,17 @@ class TaskTest extends TestCase
         // Sem data de vencimento - não está vencida
         $this->task->setDueDate(null);
         $this->assertFalse($this->task->isOverdue());
-        
+
         // Data no futuro - não está vencida
         $futureDate = new DateTime('+7 days');
         $this->task->setDueDate($futureDate);
         $this->assertFalse($this->task->isOverdue());
-        
+
         // Data no passado - está vencida
         $pastDate = new DateTime('-1 day');
         $this->task->setDueDate($pastDate);
         $this->assertTrue($this->task->isOverdue());
-        
+
         // Tarefa completada não está vencida, mesmo com data no passado
         $this->task->setStatus('completed');
         $this->assertFalse($this->task->isOverdue());
@@ -313,16 +313,16 @@ class TaskTest extends TestCase
     {
         // Inicialmente sem data de conclusão
         $this->assertNull($this->task->getCompletedAt());
-        
+
         // Ao marcar como concluída, deve definir a data
         $beforeTime = new DateTime();
         $this->task->setStatus('completed');
         $afterTime = new DateTime();
-        
+
         $this->assertNotNull($this->task->getCompletedAt());
         $this->assertTrue($this->task->getCompletedAt() >= $beforeTime);
         $this->assertTrue($this->task->getCompletedAt() <= $afterTime);
-        
+
         // Ao mudar para outro status, deve limpar a data de conclusão
         $this->task->setStatus('pending');
         $this->assertNull($this->task->getCompletedAt());
@@ -340,12 +340,12 @@ class TaskTest extends TestCase
         $this->task->setPriority('high');
         $this->task->setUserId(123);
         $this->task->setCategoryId(456);
-        
+
         $dueDate = new DateTime('+7 days');
         $this->task->setDueDate($dueDate);
-        
+
         $array = $this->task->toArray();
-        
+
         $this->assertIsArray($array);
         $this->assertEquals(1, $array['id']);
         $this->assertEquals('Tarefa de teste', $array['title']);
@@ -362,7 +362,7 @@ class TaskTest extends TestCase
         $this->assertArrayHasKey('is_in_progress', $array);
         $this->assertArrayHasKey('is_pending', $array);
         $this->assertArrayHasKey('is_overdue', $array);
-        
+
         // Verifica valores booleanos
         $this->assertFalse($array['is_completed']);
         $this->assertTrue($array['is_in_progress']);
@@ -376,13 +376,13 @@ class TaskTest extends TestCase
     public function testUpdatedAtTimestamp(): void
     {
         $initialTime = $this->task->getUpdatedAt();
-        
+
         // Simula uma pequena pausa
         usleep(1000); // 1ms
-        
+
         // Modifica a tarefa
         $this->task->setTitle('Novo título');
-        
+
         // Verifica se updated_at foi atualizado
         $this->assertTrue($this->task->getUpdatedAt() > $initialTime);
     }
@@ -395,9 +395,9 @@ class TaskTest extends TestCase
         $this->task->setTitle('Teste');
         $this->task->setUserId(1);
         $initialTime = $this->task->getUpdatedAt();
-        
+
         usleep(1000);
-        
+
         // Testa várias modificações
         $modifications = [
             fn() => $this->task->setDescription('Nova descrição'),
@@ -406,7 +406,7 @@ class TaskTest extends TestCase
             fn() => $this->task->setDueDate(new DateTime('+1 day')),
             fn() => $this->task->setCategoryId(10),
         ];
-        
+
         foreach ($modifications as $modification) {
             $timeBeforeChange = $this->task->getUpdatedAt();
             usleep(1000);
@@ -426,7 +426,7 @@ class TaskTest extends TestCase
         $this->assertArrayHasKey('in_progress', $statuses);
         $this->assertArrayHasKey('completed', $statuses);
         $this->assertArrayHasKey('cancelled', $statuses);
-        
+
         $priorities = Task::getAvailablePriorities();
         $this->assertIsArray($priorities);
         $this->assertArrayHasKey('low', $priorities);
@@ -444,7 +444,7 @@ class TaskTest extends TestCase
         $this->assertEquals('in_progress', Task::STATUS_IN_PROGRESS);
         $this->assertEquals('completed', Task::STATUS_COMPLETED);
         $this->assertEquals('cancelled', Task::STATUS_CANCELLED);
-        
+
         $this->assertEquals('low', Task::PRIORITY_LOW);
         $this->assertEquals('medium', Task::PRIORITY_MEDIUM);
         $this->assertEquals('high', Task::PRIORITY_HIGH);
@@ -459,12 +459,12 @@ class TaskTest extends TestCase
         // Título exatamente com 3 caracteres (mínimo)
         $this->task->setTitle('abc');
         $this->assertEquals('abc', $this->task->getTitle());
-        
+
         // Título com 200 caracteres (máximo)
         $maxTitle = str_repeat('a', 200);
         $this->task->setTitle($maxTitle);
         $this->assertEquals($maxTitle, $this->task->getTitle());
-        
+
         // Descrição com 1000 caracteres (máximo)
         $maxDescription = str_repeat('a', 1000);
         $this->task->setDescription($maxDescription);
@@ -477,7 +477,7 @@ class TaskTest extends TestCase
     public function testFluentInterface(): void
     {
         $dueDate = new DateTime('+1 week');
-        
+
         $result = $this->task
             ->setId(1)
             ->setTitle('Tarefa fluente')
@@ -487,7 +487,7 @@ class TaskTest extends TestCase
             ->setUserId(123)
             ->setCategoryId(456)
             ->setDueDate($dueDate);
-        
+
         $this->assertSame($this->task, $result);
         $this->assertEquals(1, $this->task->getId());
         $this->assertEquals('Tarefa fluente', $this->task->getTitle());
@@ -509,18 +509,18 @@ class TaskTest extends TestCase
         $this->task->setUserId(1);
         $this->assertTrue($this->task->isPending());
         $this->assertFalse($this->task->isCompleted());
-        
+
         // Início do trabalho
         $this->task->setStatus('in_progress');
         $this->assertTrue($this->task->isInProgress());
         $this->assertFalse($this->task->isPending());
         $this->assertFalse($this->task->isCompleted());
-        
+
         // Conclusão da tarefa
         $beforeCompletion = new DateTime();
         $this->task->setStatus('completed');
         $afterCompletion = new DateTime();
-        
+
         $this->assertTrue($this->task->isCompleted());
         $this->assertFalse($this->task->isInProgress());
         $this->assertFalse($this->task->isPending());
@@ -537,7 +537,7 @@ class TaskTest extends TestCase
         // Título com espaços
         $this->task->setTitle('  Título com espaços  ');
         $this->assertEquals('Título com espaços', $this->task->getTitle());
-        
+
         // Descrição com espaços
         $this->task->setDescription('  Descrição com espaços  ');
         $this->assertEquals('Descrição com espaços', $this->task->getDescription());
