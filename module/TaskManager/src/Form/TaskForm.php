@@ -13,7 +13,7 @@ use Laminas\Filter;
 use TaskManager\Entity\Task;
 
 /**
- * Formulário para criar e editar tarefas
+ * Form for creating and editing tasks
  */
 class TaskForm extends Form
 {
@@ -29,7 +29,7 @@ class TaskForm extends Form
     }
 
     /**
-     * Adiciona elementos ao formulário
+     * Add elements to the form
      */
     protected function addElements(): void
     {
@@ -44,12 +44,12 @@ class TaskForm extends Form
             'type' => Element\Text::class,
             'name' => 'title',
             'options' => [
-                'label' => 'Título da Tarefa',
+                'label' => 'Task Title',
             ],
             'attributes' => [
                 'id' => 'title',
                 'class' => 'form-control',
-                'placeholder' => 'Digite o título da tarefa...',
+                'placeholder' => 'Enter task title...',
                 'required' => true,
                 'maxlength' => 200,
             ],
@@ -60,12 +60,12 @@ class TaskForm extends Form
             'type' => Element\Textarea::class,
             'name' => 'description',
             'options' => [
-                'label' => 'Descrição',
+                'label' => 'Description',
             ],
             'attributes' => [
                 'id' => 'description',
                 'class' => 'form-control',
-                'placeholder' => 'Descreva os detalhes da tarefa...',
+                'placeholder' => 'Describe the task details...',
                 'rows' => 4,
             ],
         ]);
@@ -77,10 +77,10 @@ class TaskForm extends Form
             'options' => [
                 'label' => 'Status',
                 'value_options' => [
-                    Task::STATUS_PENDING => 'Pendente',
-                    Task::STATUS_IN_PROGRESS => 'Em Andamento',
-                    Task::STATUS_COMPLETED => 'Concluída',
-                    Task::STATUS_CANCELLED => 'Cancelada',
+                    Task::STATUS_PENDING => 'Pending',
+                    Task::STATUS_IN_PROGRESS => 'In Progress',
+                    Task::STATUS_COMPLETED => 'Completed',
+                    Task::STATUS_CANCELLED => 'Cancelled',
                 ],
             ],
             'attributes' => [
@@ -94,12 +94,12 @@ class TaskForm extends Form
             'type' => Element\Select::class,
             'name' => 'priority',
             'options' => [
-                'label' => 'Prioridade',
+                'label' => 'Priority',
                 'value_options' => [
-                    Task::PRIORITY_LOW => 'Baixa',
-                    Task::PRIORITY_MEDIUM => 'Média',
-                    Task::PRIORITY_HIGH => 'Alta',
-                    Task::PRIORITY_URGENT => 'Urgente',
+                    Task::PRIORITY_LOW => 'Low',
+                    Task::PRIORITY_MEDIUM => 'Medium',
+                    Task::PRIORITY_HIGH => 'High',
+                    Task::PRIORITY_URGENT => 'Urgent',
                 ],
             ],
             'attributes' => [
@@ -108,13 +108,12 @@ class TaskForm extends Form
             ],
         ]);
 
-        // Data de Vencimento
+        // Data de vencimento
         $this->add([
             'type' => Element\DateTime::class,
             'name' => 'due_date',
             'options' => [
-                'label' => 'Data de Vencimento',
-                'format' => 'Y-m-d\TH:i',
+                'label' => 'Due Date',
             ],
             'attributes' => [
                 'id' => 'due_date',
@@ -123,20 +122,14 @@ class TaskForm extends Form
             ],
         ]);
 
-        // Categoria (será implementada posteriormente)
+        // Categoria
         $this->add([
             'type' => Element\Select::class,
             'name' => 'category_id',
             'options' => [
-                'label' => 'Categoria',
-                'value_options' => [
-                    '' => 'Selecione uma categoria...',
-                    1 => 'Trabalho',
-                    2 => 'Pessoal',
-                    3 => 'Urgente',
-                    4 => 'Estudos',
-                ],
-                'empty_option' => 'Nenhuma categoria',
+                'label' => 'Category',
+                'value_options' => $this->getCategoryOptions(),
+                'empty_option' => 'Select a category...',
             ],
             'attributes' => [
                 'id' => 'category_id',
@@ -160,9 +153,8 @@ class TaskForm extends Form
             'type' => Element\Submit::class,
             'name' => 'submit',
             'attributes' => [
-                'value' => 'Salvar Tarefa',
+                'value' => 'Save Task',
                 'class' => 'btn btn-primary',
-                'id' => 'submit-button',
             ],
         ]);
     }
@@ -183,7 +175,7 @@ class TaskForm extends Form
             ],
         ]);
 
-        // Título
+        // Title
         $inputFilter->add([
             'name' => 'title',
             'required' => true,
@@ -196,7 +188,7 @@ class TaskForm extends Form
                     'name' => Validator\NotEmpty::class,
                     'options' => [
                         'messages' => [
-                            Validator\NotEmpty::IS_EMPTY => 'O título da tarefa é obrigatório',
+                            Validator\NotEmpty::IS_EMPTY => 'Task title is required',
                         ],
                     ],
                 ],
@@ -207,8 +199,8 @@ class TaskForm extends Form
                         'min' => 3,
                         'max' => 200,
                         'messages' => [
-                            Validator\StringLength::TOO_SHORT => 'O título deve ter pelo menos 3 caracteres',
-                            Validator\StringLength::TOO_LONG => 'O título não pode ter mais de 200 caracteres',
+                            Validator\StringLength::TOO_SHORT => 'Title must be at least 3 characters long',
+                            Validator\StringLength::TOO_LONG => 'Title cannot exceed 200 characters',
                         ],
                     ],
                 ],
@@ -217,14 +209,14 @@ class TaskForm extends Form
                     'options' => [
                         'pattern' => '/^[a-zA-Z0-9\s\-_.,!?áéíóúàèìòùâêîôûãõçÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ]+$/u',
                         'messages' => [
-                            Validator\Regex::NOT_MATCH => 'O título contém caracteres inválidos',
+                            Validator\Regex::NOT_MATCH => 'Title contains invalid characters',
                         ],
                     ],
                 ],
             ],
         ]);
 
-        // Descrição
+        // Description
         $inputFilter->add([
             'name' => 'description',
             'required' => false,
@@ -239,7 +231,7 @@ class TaskForm extends Form
                         'encoding' => 'UTF-8',
                         'max' => 1000,
                         'messages' => [
-                            Validator\StringLength::TOO_LONG => 'A descrição deve ter no máximo %max% caracteres',
+                            Validator\StringLength::TOO_LONG => 'Description must not exceed %max% characters',
                         ],
                     ],
                 ],
@@ -264,14 +256,14 @@ class TaskForm extends Form
                             Task::STATUS_CANCELLED,
                         ],
                         'messages' => [
-                            Validator\InArray::NOT_IN_ARRAY => 'Status inválido selecionado',
+                            Validator\InArray::NOT_IN_ARRAY => 'Invalid status selected',
                         ],
                     ],
                 ],
             ],
         ]);
 
-        // Prioridade
+        // Priority
         $inputFilter->add([
             'name' => 'priority',
             'required' => true,
@@ -289,14 +281,14 @@ class TaskForm extends Form
                             Task::PRIORITY_URGENT,
                         ],
                         'messages' => [
-                            Validator\InArray::NOT_IN_ARRAY => 'Prioridade inválida selecionada',
+                            Validator\InArray::NOT_IN_ARRAY => 'Invalid priority selected',
                         ],
                     ],
                 ],
             ],
         ]);
 
-        // Data de Vencimento
+        // Due Date
         $inputFilter->add([
             'name' => 'due_date',
             'required' => false,
@@ -309,7 +301,7 @@ class TaskForm extends Form
                     'options' => [
                         'format' => 'Y-m-d\TH:i',
                         'messages' => [
-                            Validator\Date::INVALID_DATE => 'Data de vencimento inválida',
+                            Validator\Date::INVALID_DATE => 'Invalid due date',
                         ],
                     ],
                 ],

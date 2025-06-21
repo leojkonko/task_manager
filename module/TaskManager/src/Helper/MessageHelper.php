@@ -5,43 +5,43 @@ declare(strict_types=1);
 namespace TaskManager\Helper;
 
 /**
- * Helper para gerar mensagens amigáveis ao usuário
+ * Helper for generating user-friendly messages
  */
 class MessageHelper
 {
     /**
-     * Mensagens de sucesso amigáveis
+     * Friendly success messages
      */
-    public static function getSuccessMessage(string $action, string $entity = 'tarefa'): string
+    public static function getSuccessMessage(string $action, string $entity = 'task'): string
     {
         $messages = [
-            'create' => "🎉 {$entity} criada com sucesso! Você pode visualizar os detalhes abaixo.",
-            'update' => "✅ {$entity} atualizada com perfeição! Suas alterações foram salvas.",
-            'delete' => "🗑️ {$entity} removida com sucesso! Ela foi excluída permanentemente.",
-            'complete' => "🏆 Parabéns! A {$entity} foi marcada como concluída.",
-            'start' => "🚀 Ótimo! A {$entity} agora está em andamento.",
-            'duplicate' => "📋 {$entity} duplicada com sucesso! Uma nova {$entity} foi criada com base na original.",
-            'save' => "💾 Perfeito! Suas alterações foram salvas com sucesso."
+            'create' => "🎉 {$entity} created successfully! You can view the details below.",
+            'update' => "✅ {$entity} updated perfectly! Your changes have been saved.",
+            'delete' => "🗑️ {$entity} removed successfully! It has been permanently deleted.",
+            'complete' => "🏆 Congratulations! The {$entity} has been marked as completed.",
+            'start' => "🚀 Great! The {$entity} is now in progress.",
+            'duplicate' => "📋 {$entity} duplicated successfully! A new {$entity} has been created based on the original.",
+            'save' => "💾 Perfect! Your changes have been saved successfully."
         ];
 
-        return $messages[$action] ?? "✅ Operação realizada com sucesso!";
+        return $messages[$action] ?? "✅ Operation completed successfully!";
     }
 
     /**
-     * Mensagens de erro amigáveis
+     * Friendly error messages
      */
     public static function getErrorMessage(string $type, string $context = ''): string
     {
         $messages = [
-            'not_found' => "😕 Ops! A tarefa que você está procurando não foi encontrada.",
-            'validation_error' => "⚠️ Verifique os dados informados. Alguns campos precisam de atenção:",
-            'weekday_only' => "📅 Que pena! As tarefas só podem ser criadas durante os dias úteis (segunda a sexta-feira).",
-            'pending_only_update' => "🔒 Esta tarefa não pode ser editada porque seu status atual não permite modificações. Apenas tarefas com status 'Pendente' podem ser editadas.\n\n💡 Dica: Tarefas concluídas, canceladas ou em andamento são protegidas contra alterações para manter a integridade dos dados.",
-            'pending_only_delete' => "🔒 Esta tarefa não pode ser excluída porque seu status atual não permite a remoção. Apenas tarefas com status 'Pendente' podem ser excluídas.\n\n💡 Motivo: Tarefas que já estão em andamento, concluídas ou canceladas contêm informações importantes do histórico do projeto.",
-            'too_recent_delete' => "⏰ Esta tarefa é muito recente para ser excluída. Por questões de segurança, aguarde alguns dias antes de tentar novamente.\n\n🛡️ Esta regra previne exclusões acidentais de tarefas recém-criadas.",
-            'status_protection_info' => "🛡️ Proteção de Status: Esta operação só é permitida para tarefas com status 'Pendente'. Tarefas com outros status são protegidas para preservar o histórico do projeto.",
-            'general_error' => "😓 Algo não saiu como esperado. Tente novamente em alguns instantes.",
-            'form_invalid' => "📝 Por favor, verifique as informações do formulário e tente novamente."
+            'not_found' => "😕 Oops! The task you're looking for was not found.",
+            'validation_error' => "⚠️ Please check the information provided. Some fields need attention:",
+            'weekday_only' => "📅 Sorry! Tasks can only be created during weekdays (Monday to Friday).",
+            'pending_only_update' => "🔒 This task cannot be edited because its current status doesn't allow modifications. Only tasks with 'Pending' status can be edited.\n\n💡 Tip: Completed, cancelled or in-progress tasks are protected against changes to maintain data integrity.",
+            'pending_only_delete' => "🔒 This task cannot be deleted because its current status doesn't allow removal. Only tasks with 'Pending' status can be deleted.\n\n💡 Reason: Tasks that are in progress, completed or cancelled contain important project history information.",
+            'too_recent_delete' => "⏰ This task is too recent to be deleted. For security reasons, please wait a few days before trying again.\n\n🛡️ This rule prevents accidental deletion of newly created tasks.",
+            'status_protection_info' => "🛡️ Status Protection: This operation is only allowed for tasks with 'Pending' status. Tasks with other statuses are protected to preserve project history.",
+            'general_error' => "😓 Something didn't go as expected. Please try again in a few moments.",
+            'form_invalid' => "📝 Please check the form information and try again."
         ];
 
         $message = $messages[$type] ?? $messages['general_error'];
@@ -54,36 +54,36 @@ class MessageHelper
     }
 
     /**
-     * Mensagens de informação
+     * Information messages
      */
     public static function getInfoMessage(string $type): string
     {
         $messages = [
-            'empty_list' => "📋 Nenhuma tarefa encontrada. Que tal criar sua primeira tarefa?",
-            'loading' => "⏳ Carregando suas tarefas...",
-            'saving' => "💾 Salvando suas alterações...",
-            'processing' => "⚙️ Processando sua solicitação..."
+            'empty_list' => "📋 No tasks found. How about creating your first task?",
+            'loading' => "⏳ Loading your tasks...",
+            'saving' => "💾 Saving your changes...",
+            'processing' => "⚙️ Processing your request..."
         ];
 
-        return $messages[$type] ?? "ℹ️ Informação não disponível.";
+        return $messages[$type] ?? "ℹ️ Information not available.";
     }
 
     /**
-     * Mensagens de confirmação
+     * Confirmation messages
      */
     public static function getConfirmationMessage(string $action, string $itemName = ''): string
     {
         $messages = [
-            'delete' => "🗑️ Tem certeza que deseja excluir" . ($itemName ? " '{$itemName}'" : " esta tarefa") . "?\n\nEsta ação não pode ser desfeita.",
-            'complete' => "🏆 Deseja marcar" . ($itemName ? " '{$itemName}'" : " esta tarefa") . " como concluída?",
-            'cancel' => "❌ Tem certeza que deseja cancelar? Todas as alterações não salvas serão perdidas."
+            'delete' => "🗑️ Are you sure you want to delete" . ($itemName ? " '{$itemName}'" : " this task") . "?\n\nThis action cannot be undone.",
+            'complete' => "🏆 Do you want to mark" . ($itemName ? " '{$itemName}'" : " this task") . " as completed?",
+            'cancel' => "❌ Are you sure you want to cancel? All unsaved changes will be lost."
         ];
 
-        return $messages[$action] ?? "❓ Deseja continuar com esta ação?";
+        return $messages[$action] ?? "❓ Do you want to continue with this action?";
     }
 
     /**
-     * Gera classe CSS baseada no tipo de mensagem para styling
+     * Generate CSS class based on message type for styling
      */
     public static function getMessageClass(string $type): string
     {
@@ -98,7 +98,7 @@ class MessageHelper
     }
 
     /**
-     * Gera ícone baseado no tipo de mensagem
+     * Generate icon based on message type
      */
     public static function getMessageIcon(string $type): string
     {

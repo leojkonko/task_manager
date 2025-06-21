@@ -8,19 +8,19 @@ use DateTime;
 
 class Task
 {
-    // Constantes para status válidos
+    // Constants for valid statuses
     const STATUS_PENDING = 'pending';
     const STATUS_IN_PROGRESS = 'in_progress';
     const STATUS_COMPLETED = 'completed';
     const STATUS_CANCELLED = 'cancelled';
 
-    // Constantes para prioridades válidas
+    // Constants for valid priorities
     const PRIORITY_LOW = 'low';
     const PRIORITY_MEDIUM = 'medium';
     const PRIORITY_HIGH = 'high';
     const PRIORITY_URGENT = 'urgent';
 
-    // Propriedades da tarefa
+    // Task properties
     public $id;
     public $title;
     public $description;
@@ -34,7 +34,7 @@ class Task
     public $updated_at;
 
     /**
-     * Lista de status válidos
+     * List of valid statuses
      */
     public static function getValidStatuses()
     {
@@ -47,7 +47,7 @@ class Task
     }
 
     /**
-     * Lista de prioridades válidas
+     * List of valid priorities
      */
     public static function getValidPriorities()
     {
@@ -60,25 +60,25 @@ class Task
     }
 
     /**
-     * Troca dados do array com validação
+     * Exchange array data with validation
      */
     public function exchangeArray(array $data)
     {
         $this->id = !empty($data['id']) ? (int)$data['id'] : null;
 
-        // Validar e definir título
+        // Validate and set title
         $this->setTitle($data['title'] ?? '');
 
-        // Definir descrição
+        // Set description
         $this->description = !empty($data['description']) ? trim($data['description']) : null;
 
-        // Validar e definir status
+        // Validate and set status
         $this->setStatus($data['status'] ?? self::STATUS_PENDING);
 
-        // Validar e definir prioridade
+        // Validate and set priority
         $this->setPriority($data['priority'] ?? self::PRIORITY_MEDIUM);
 
-        // Validar e definir data de vencimento
+        // Validate and set due date
         $this->setDueDate($data['due_date'] ?? null);
 
         $this->completed_at = !empty($data['completed_at']) ? $data['completed_at'] : null;
@@ -89,35 +89,35 @@ class Task
     }
 
     /**
-     * Validar e definir título da tarefa
+     * Validate and set task title
      */
     public function setTitle($title)
     {
         $title = trim($title);
 
         if (empty($title)) {
-            throw new InvalidArgumentException('O título da tarefa não pode estar vazio.');
+            throw new InvalidArgumentException('Task title cannot be empty.');
         }
 
         if (strlen($title) > 200) {
-            throw new InvalidArgumentException('O título da tarefa não pode ter mais de 200 caracteres.');
+            throw new InvalidArgumentException('Task title cannot exceed 200 characters.');
         }
 
         if (strlen($title) < 3) {
-            throw new InvalidArgumentException('O título da tarefa deve ter pelo menos 3 caracteres.');
+            throw new InvalidArgumentException('Task title must be at least 3 characters long.');
         }
 
         $this->title = $title;
     }
 
     /**
-     * Validar e definir status da tarefa
+     * Validate and set task status
      */
     public function setStatus($status)
     {
         if (!in_array($status, self::getValidStatuses())) {
             throw new InvalidArgumentException(sprintf(
-                'Status "%s" é inválido. Status válidos são: %s',
+                'Status "%s" is invalid. Valid statuses are: %s',
                 $status,
                 implode(', ', self::getValidStatuses())
             ));
@@ -125,7 +125,7 @@ class Task
 
         $this->status = $status;
 
-        // Automaticamente definir completed_at quando status for completed
+        // Automatically set completed_at when status is completed
         if ($status === self::STATUS_COMPLETED && !$this->completed_at) {
             $this->completed_at = date('Y-m-d H:i:s');
         } elseif ($status !== self::STATUS_COMPLETED) {
@@ -134,13 +134,13 @@ class Task
     }
 
     /**
-     * Validar e definir prioridade da tarefa
+     * Validate and set task priority
      */
     public function setPriority($priority)
     {
         if (!in_array($priority, self::getValidPriorities())) {
             throw new InvalidArgumentException(sprintf(
-                'Prioridade "%s" é inválida. Prioridades válidas são: %s',
+                'Priority "%s" is invalid. Valid priorities are: %s',
                 $priority,
                 implode(', ', self::getValidPriorities())
             ));
@@ -150,7 +150,7 @@ class Task
     }
 
     /**
-     * Validar e definir data de vencimento
+     * Validate and set due date
      */
     public function setDueDate($dueDate)
     {
@@ -161,14 +161,14 @@ class Task
 
         // Validar formato de data
         if (!$this->isValidDateTime($dueDate)) {
-            throw new InvalidArgumentException('Data de vencimento deve estar em um formato válido.');
+            throw new InvalidArgumentException('Due date must be in a valid format.');
         }
 
         $this->due_date = $dueDate;
     }
 
     /**
-     * Verificar se uma string é uma data/hora válida
+     * Check if a string is a valid date/time
      */
     private function isValidDateTime($dateTime)
     {
@@ -188,22 +188,22 @@ class Task
     }
 
     /**
-     * Validar dados da tarefa
+     * Validate task data
      */
     public function validate()
     {
         $errors = [];
 
         if (empty($this->title)) {
-            $errors[] = 'O título da tarefa é obrigatório.';
+            $errors[] = 'Task title is required.';
         }
 
         if (empty($this->user_id)) {
-            $errors[] = 'O usuário da tarefa é obrigatório.';
+            $errors[] = 'Task user is required.';
         }
 
         if (!empty($errors)) {
-            throw new DomainException('Dados da tarefa são inválidos: ' . implode(' ', $errors));
+            throw new DomainException('Task data is invalid: ' . implode(' ', $errors));
         }
 
         return true;
@@ -229,25 +229,25 @@ class Task
     public function getStatusLabel()
     {
         $labels = [
-            self::STATUS_PENDING => 'Pendente',
-            self::STATUS_IN_PROGRESS => 'Em Andamento',
-            self::STATUS_COMPLETED => 'Concluída',
-            self::STATUS_CANCELLED => 'Cancelada'
+            self::STATUS_PENDING => 'Pending',
+            self::STATUS_IN_PROGRESS => 'In Progress',
+            self::STATUS_COMPLETED => 'Completed',
+            self::STATUS_CANCELLED => 'Cancelled'
         ];
 
-        return isset($labels[$this->status]) ? $labels[$this->status] : 'Desconhecido';
+        return isset($labels[$this->status]) ? $labels[$this->status] : 'Unknown';
     }
 
     public function getPriorityLabel()
     {
         $labels = [
-            self::PRIORITY_LOW => 'Baixa',
-            self::PRIORITY_MEDIUM => 'Média',
-            self::PRIORITY_HIGH => 'Alta',
-            self::PRIORITY_URGENT => 'Urgente'
+            self::PRIORITY_LOW => 'Low',
+            self::PRIORITY_MEDIUM => 'Medium',
+            self::PRIORITY_HIGH => 'High',
+            self::PRIORITY_URGENT => 'Urgent'
         ];
 
-        return isset($labels[$this->priority]) ? $labels[$this->priority] : 'Média';
+        return isset($labels[$this->priority]) ? $labels[$this->priority] : 'Medium';
     }
 
     public function getPriorityClass()
@@ -272,7 +272,7 @@ class Task
     }
 
     /**
-     * Verificar se a tarefa está concluída
+     * Check if task is completed
      */
     public function isCompleted()
     {
@@ -280,7 +280,7 @@ class Task
     }
 
     /**
-     * Verificar se a tarefa está em andamento
+     * Check if task is in progress
      */
     public function isInProgress()
     {
@@ -288,7 +288,7 @@ class Task
     }
 
     /**
-     * Verificar se a tarefa está pendente
+     * Check if task is pending
      */
     public function isPending()
     {
@@ -296,7 +296,7 @@ class Task
     }
 
     /**
-     * Obter número de dias até o vencimento
+     * Get number of days until due
      */
     public function getDaysUntilDue()
     {
@@ -312,7 +312,7 @@ class Task
     }
 
     /**
-     * Marcar tarefa como concluída
+     * Mark task as completed
      */
     public function markAsCompleted()
     {
@@ -320,7 +320,7 @@ class Task
     }
 
     /**
-     * Marcar tarefa como em andamento
+     * Mark task as in progress
      */
     public function markAsInProgress()
     {

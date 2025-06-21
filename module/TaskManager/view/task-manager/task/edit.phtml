@@ -1,5 +1,5 @@
 <?php
-$title = 'Editar Tarefa: ' . $task['title'];
+$title = 'Edit Task: ' . $task['title'];
 $this->headTitle($title);
 ?>
 
@@ -8,7 +8,7 @@ $this->headTitle($title);
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="mb-0">Editar Tarefa</h3>
+                    <h3 class="mb-0">Edit Task</h3>
                 </div>
                 <div class="card-body">
                     <?php
@@ -21,7 +21,7 @@ $this->headTitle($title);
                     <!-- Exibir erros de validação -->
                     <?php if ($form->getMessages()): ?>
                         <div class="alert alert-danger">
-                            <h6>Por favor, corrija os seguintes erros:</h6>
+                            <h6>Please correct the following errors:</h6>
                             <ul class="mb-0">
                                 <?php foreach ($form->getMessages() as $field => $errors): ?>
                                     <?php foreach ($errors as $error): ?>
@@ -71,7 +71,7 @@ $this->headTitle($title);
                                 <?= $this->formLabel($form->get('due_date')) ?>
                                 <?= $this->formElement($form->get('due_date')) ?>
                                 <?= $this->formElementErrors($form->get('due_date')) ?>
-                                <div class="form-text">Deixe em branco se não houver prazo específico</div>
+                                <div class="form-text">Leave blank if there's no specific deadline</div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -87,13 +87,13 @@ $this->headTitle($title);
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Data de Criação</label>
+                                <label class="form-label">Creation Date</label>
                                 <input type="text" class="form-control" value="<?= date('d/m/Y H:i', strtotime($task['created_at'])) ?>" readonly>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Última Atualização</label>
+                                <label class="form-label">Last Updated</label>
                                 <input type="text" class="form-control" value="<?= date('d/m/Y H:i', strtotime($task['updated_at'])) ?>" readonly>
                             </div>
                         </div>
@@ -101,7 +101,7 @@ $this->headTitle($title);
 
                     <?php if ($task['completed_at']): ?>
                         <div class="mb-3">
-                            <label class="form-label">Data de Conclusão</label>
+                            <label class="form-label">Completion Date</label>
                             <input type="text" class="form-control" value="<?= date('d/m/Y H:i', strtotime($task['completed_at'])) ?>" readonly>
                         </div>
                     <?php endif; ?>
@@ -109,16 +109,16 @@ $this->headTitle($title);
                     <div class="d-flex justify-content-between">
                         <div>
                             <a href="<?= $this->url('task-manager') ?>" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Voltar
+                                <i class="fas fa-arrow-left"></i> Back
                             </a>
                             <a href="<?= $this->url('task-manager/view', ['id' => $task['id']]) ?>" class="btn btn-outline-info">
-                                <i class="fas fa-eye"></i> Visualizar
+                                <i class="fas fa-eye"></i> View
                             </a>
                         </div>
                         <div>
                             <?= $this->formElement($form->get('submit')) ?>
                             <button type="button" class="btn btn-danger" onclick="deleteTask(<?= $task['id'] ?>)">
-                                <i class="fas fa-trash"></i> Excluir
+                                <i class="fas fa-trash"></i> Delete
                             </button>
                         </div>
                     </div>
@@ -143,7 +143,7 @@ $this->headTitle($title);
             if (titleInput.value.trim().length < 3) {
                 isValid = false;
                 titleInput.classList.add('is-invalid');
-                showFieldError(titleInput, 'O título deve ter pelo menos 3 caracteres');
+                showFieldError(titleInput, 'Title must be at least 3 characters long');
             } else {
                 titleInput.classList.remove('is-invalid');
                 hideFieldError(titleInput);
@@ -181,12 +181,12 @@ $this->headTitle($title);
     function deleteTask(id) {
         // Usar mensagem de confirmação personalizada
         const taskTitle = '<?= addslashes($task['title']) ?>';
-        const confirmMessage = `🗑️ Tem certeza que deseja excluir "${taskTitle}"?\n\nEsta ação não pode ser desfeita.`;
+        const confirmMessage = `🗑️ Are you sure you want to delete "${taskTitle}"?\n\nThis action cannot be undone.`;
 
         if (confirm(confirmMessage)) {
             // Mostrar loading toast
             if (typeof showInfoToast === 'function') {
-                showInfoToast('⏳ Processando exclusão...', 'Aguarde');
+                showInfoToast('⏳ Processing deletion...', 'Please wait');
             }
 
             fetch(`/tasks/delete/${id}`, {
@@ -200,9 +200,9 @@ $this->headTitle($title);
                     if (data.success) {
                         // Sucesso - usar toast verde
                         if (typeof showSuccessToast === 'function') {
-                            showSuccessToast('🎉 Tarefa excluída com sucesso!', 'Concluído!');
+                            showSuccessToast('🎉 Task deleted successfully!', 'Completed!');
                         } else {
-                            alert('Tarefa excluída com sucesso!');
+                            alert('Task deleted successfully!');
                         }
 
                         // Redirecionar após um pequeno delay para mostrar o toast
@@ -212,18 +212,18 @@ $this->headTitle($title);
                     } else {
                         // Erro - usar toast vermelho com mensagem amigável
                         if (typeof showErrorToast === 'function') {
-                            showErrorToast(data.message || '😓 Algo não saiu como esperado. Tente novamente em alguns instantes.', 'Ops!');
+                            showErrorToast(data.message || '😓 Something went wrong. Please try again in a few moments.', 'Oops!');
                         } else {
-                            alert('Erro: ' + data.message);
+                            alert('Error: ' + data.message);
                         }
                     }
                 })
                 .catch(error => {
                     // Erro de rede - usar toast vermelho
                     if (typeof showErrorToast === 'function') {
-                        showErrorToast('😓 Erro de conexão. Verifique sua internet e tente novamente.', 'Erro de Rede');
+                        showErrorToast('😓 Connection error. Check your internet and try again.', 'Network Error');
                     } else {
-                        alert('Erro ao excluir tarefa');
+                        alert('Error deleting task');
                     }
                 });
         }

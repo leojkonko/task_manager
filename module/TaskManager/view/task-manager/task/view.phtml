@@ -1,5 +1,5 @@
 <?php
-$title = 'Visualizar Tarefa: ' . $task['title'];
+$title = 'View Task: ' . $task['title'];
 $this->headTitle($title);
 ?>
 
@@ -8,7 +8,7 @@ $this->headTitle($title);
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0">Detalhes da Tarefa</h3>
+                    <h3 class="mb-0">Task Details</h3>
                     <div>
                         <span class="badge <?= $this->getStatusBadgeClass($task['status']) ?> me-2">
                             <?= $this->escapeHtml($availableStatuses[$task['status']]) ?>
@@ -23,7 +23,7 @@ $this->headTitle($title);
 
                     <?php if ($task['description']): ?>
                         <div class="mb-3">
-                            <h6>Descrição:</h6>
+                            <h6>Description:</h6>
                             <p class="text-muted"><?= nl2br($this->escapeHtml($task['description'])) ?></p>
                         </div>
                     <?php endif; ?>
@@ -39,7 +39,7 @@ $this->headTitle($title);
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h6>Prioridade:</h6>
+                                <h6>Priority:</h6>
                                 <span class="badge <?= $this->getPriorityBadgeClass($task['priority']) ?>">
                                     <?= $this->escapeHtml($availablePriorities[$task['priority']]) ?>
                                 </span>
@@ -50,26 +50,32 @@ $this->headTitle($title);
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h6>Data de Criação:</h6>
-                                <p class="text-muted"><?= date('d/m/Y H:i', strtotime($task['created_at'])) ?></p>
+                                <h6>Created:</h6>
+                                <p class="text-muted">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    <?= date('d/m/Y H:i', strtotime($task['created_at'])) ?>
+                                </p>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h6>Última Atualização:</h6>
-                                <p class="text-muted"><?= date('d/m/Y H:i', strtotime($task['updated_at'])) ?></p>
+                                <h6>Last Updated:</h6>
+                                <p class="text-muted">
+                                    <i class="fas fa-edit"></i>
+                                    <?= date('d/m/Y H:i', strtotime($task['updated_at'])) ?>
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <?php if ($task['due_date']): ?>
                         <div class="mb-3">
-                            <h6>Data de Vencimento:</h6>
+                            <h6>Due Date:</h6>
                             <p class="text-muted <?= $task['is_overdue'] ? 'text-danger' : '' ?>">
                                 <i class="fas fa-calendar"></i>
                                 <?= date('d/m/Y H:i', strtotime($task['due_date'])) ?>
                                 <?php if ($task['is_overdue']): ?>
-                                    <span class="badge bg-danger ms-2">Vencida</span>
+                                    <span class="badge bg-danger ms-2">Overdue</span>
                                 <?php endif; ?>
                             </p>
                         </div>
@@ -77,7 +83,7 @@ $this->headTitle($title);
 
                     <?php if ($task['completed_at']): ?>
                         <div class="mb-3">
-                            <h6>Data de Conclusão:</h6>
+                            <h6>Completion Date:</h6>
                             <p class="text-success">
                                 <i class="fas fa-check-circle"></i>
                                 <?= date('d/m/Y H:i', strtotime($task['completed_at'])) ?>
@@ -93,7 +99,7 @@ $this->headTitle($title);
 
                     if ($task['status'] !== 'pending') {
                         $hasRestrictions = true;
-                        $restrictions[] = 'Tarefa não pode ser editada ou excluída (status: ' . $availableStatuses[$task['status']] . ')';
+                        $restrictions[] = 'Task cannot be edited or deleted (status: ' . $availableStatuses[$task['status']] . ')';
                     }
 
                     if ($task['status'] === 'pending') {
@@ -103,36 +109,37 @@ $this->headTitle($title);
                         if ($daysSinceCreation < 5) {
                             $hasRestrictions = true;
                             $remainingDays = 5 - $daysSinceCreation;
-                            $restrictions[] = "Exclusão disponível em {$remainingDays} dia(s)";
+                            $restrictions[] = "Deletion will be available in {$remainingDays} day(s)";
                         }
                     }
                     ?>
 
                     <?php if ($hasRestrictions): ?>
-                        <div class="alert alert-info py-2 mb-3">
+                        <div class="alert alert-warning alert-sm py-2 mb-3" style="font-size: 0.9em;">
                             <i class="fas fa-info-circle"></i>
-                            <strong>Informações sobre esta tarefa:</strong><br>
+                            <strong>Restrictions:</strong><br>
                             <?php foreach ($restrictions as $restriction): ?>
                                 • <?= $this->escapeHtml($restriction) ?><br>
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
 
-                    <div class="d-flex justify-content-between">
-                        <a href="<?= $this->url('task-manager') ?>" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Voltar
-                        </a>
-                        <div>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="btn-group" role="group">
+                            <a href="<?= $this->url('task-manager') ?>" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Tasks
+                            </a>
+
                             <?php if ($task['status'] === 'pending'): ?>
                                 <a href="<?= $this->url('task-manager/edit', ['id' => $task['id']]) ?>"
-                                    class="btn btn-outline-primary me-2">
-                                    <i class="fas fa-edit"></i> Editar
+                                    class="btn btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Edit
                                 </a>
                             <?php else: ?>
-                                <button type="button" class="btn btn-outline-primary me-2 disabled position-relative"
-                                    title="Apenas tarefas pendentes podem ser editadas"
+                                <button type="button" class="btn btn-outline-primary disabled position-relative"
+                                    title="Only pending tasks can be edited"
                                     data-bs-toggle="tooltip" data-bs-placement="top">
-                                    <i class="fas fa-edit"></i> Editar
+                                    <i class="fas fa-edit"></i> Edit
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
                                         <i class="fas fa-lock" style="font-size: 0.7em;"></i>
                                     </span>
@@ -142,44 +149,44 @@ $this->headTitle($title);
                             <?php if (!$task['is_completed']): ?>
                                 <button type="button" class="btn btn-success me-2"
                                     onclick="completeTask(<?= $task['id'] ?>)">
-                                    <i class="fas fa-check"></i> Marcar como Concluída
+                                    <i class="fas fa-check"></i> Mark as Completed
                                 </button>
                             <?php endif; ?>
 
                             <button type="button" class="btn btn-info me-2"
                                 onclick="duplicateTask(<?= $task['id'] ?>)">
-                                <i class="fas fa-copy"></i> Duplicar
+                                <i class="fas fa-copy"></i> Duplicate
                             </button>
 
                             <?php
                             // Verificar se pode excluir: status pending + mais de 5 dias
                             $canDelete = $task['status'] === 'pending';
-                            $createdAt = new DateTime($task['created_at']);
-                            $now = new DateTime();
-                            $daysSinceCreation = $now->diff($createdAt)->days;
-                            $ageRequirementMet = $daysSinceCreation >= 5;
-                            $canDelete = $canDelete && $ageRequirementMet;
+                            if ($canDelete) {
+                                $createdAt = new DateTime($task['created_at']);
+                                $now = new DateTime();
+                                $daysSinceCreation = $now->diff($createdAt)->days;
+                                $canDelete = $daysSinceCreation >= 5;
+                            }
                             ?>
 
                             <?php if ($canDelete): ?>
-                                <button type="button" class="btn btn-danger"
+                                <button type="button" class="btn btn-outline-danger"
                                     onclick="deleteTask(<?= $task['id'] ?>)">
-                                    <i class="fas fa-trash"></i> Excluir
+                                    <i class="fas fa-trash"></i> Delete
                                 </button>
                             <?php else: ?>
                                 <?php
-                                $tooltip = '';
                                 if ($task['status'] !== 'pending') {
-                                    $tooltip = 'Apenas tarefas pendentes podem ser excluídas';
-                                } elseif (!$ageRequirementMet) {
+                                    $tooltip = 'Only pending tasks can be deleted';
+                                } else {
                                     $remainingDays = 5 - $daysSinceCreation;
-                                    $tooltip = "Aguarde mais {$remainingDays} dia(s) para excluir";
+                                    $tooltip = "Deletion will be available in {$remainingDays} day(s). Tasks can only be deleted 5 days after creation.";
                                 }
                                 ?>
-                                <button type="button" class="btn btn-danger disabled position-relative"
+                                <button type="button" class="btn btn-outline-danger disabled position-relative"
                                     title="<?= $this->escapeHtmlAttr($tooltip) ?>"
                                     data-bs-toggle="tooltip" data-bs-placement="top">
-                                    <i class="fas fa-trash"></i> Excluir
+                                    <i class="fas fa-trash"></i> Delete
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white">
                                         <i class="fas fa-lock" style="font-size: 0.7em;"></i>
                                     </span>
@@ -195,7 +202,14 @@ $this->headTitle($title);
 
 <script>
     function completeTask(id) {
-        if (confirm('Marcar esta tarefa como concluída?')) {
+        const confirmMessage = '🏆 Mark this task as completed?';
+
+        if (confirm(confirmMessage)) {
+            // Mostrar loading toast
+            if (typeof showInfoToast === 'function') {
+                showInfoToast('⏳ Processing...', 'Please wait');
+            }
+
             fetch(`/tasks/complete/${id}`, {
                     method: 'POST',
                     headers: {
@@ -205,19 +219,37 @@ $this->headTitle($title);
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        location.reload();
+                        if (typeof showSuccessToast === 'function') {
+                            showSuccessToast('🏆 Congratulations! Task marked as completed.', 'Success!');
+                        }
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        alert('Erro: ' + data.message);
+                        if (typeof showErrorToast === 'function') {
+                            showErrorToast(data.message || '😓 Something went wrong.', 'Oops!');
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
                     }
                 })
                 .catch(error => {
-                    alert('Erro ao completar tarefa');
+                    if (typeof showErrorToast === 'function') {
+                        showErrorToast('😓 Connection error. Please try again.', 'Network Error');
+                    } else {
+                        alert('Error completing task');
+                    }
                 });
         }
     }
 
     function duplicateTask(id) {
-        if (confirm('Duplicar esta tarefa?')) {
+        const confirmMessage = '📋 Duplicate this task?';
+
+        if (confirm(confirmMessage)) {
+            // Mostrar loading toast
+            if (typeof showInfoToast === 'function') {
+                showInfoToast('⏳ Duplicating task...', 'Please wait');
+            }
+
             fetch(`/tasks/duplicate/${id}`, {
                     method: 'POST',
                     headers: {
@@ -227,20 +259,32 @@ $this->headTitle($title);
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('Tarefa duplicada com sucesso!');
-                        window.location.href = '/tasks';
+                        if (typeof showSuccessToast === 'function') {
+                            showSuccessToast('📋 Task duplicated successfully! A new task was created.', 'Completed!');
+                        }
+                        setTimeout(() => {
+                            window.location.href = '/tasks';
+                        }, 1500);
                     } else {
-                        alert('Erro: ' + data.message);
+                        if (typeof showErrorToast === 'function') {
+                            showErrorToast(data.message || '😓 Something went wrong.', 'Oops!');
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
                     }
                 })
                 .catch(error => {
-                    alert('Erro ao duplicar tarefa');
+                    if (typeof showErrorToast === 'function') {
+                        showErrorToast('😓 Connection error. Please try again.', 'Network Error');
+                    } else {
+                        alert('Error duplicating task');
+                    }
                 });
         }
     }
 
     function deleteTask(id) {
-        if (confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
+        if (confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
             fetch(`/tasks/delete/${id}`, {
                     method: 'POST',
                     headers: {
@@ -250,14 +294,26 @@ $this->headTitle($title);
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('Tarefa excluída com sucesso!');
-                        window.location.href = '/tasks';
+                        if (typeof showSuccessToast === 'function') {
+                            showSuccessToast('🗑️ Task deleted successfully!', 'Completed!');
+                        }
+                        setTimeout(() => {
+                            window.location.href = '/tasks';
+                        }, 1500);
                     } else {
-                        alert('Erro: ' + data.message);
+                        if (typeof showErrorToast === 'function') {
+                            showErrorToast(data.message || '😓 Something went wrong.', 'Oops!');
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
                     }
                 })
                 .catch(error => {
-                    alert('Erro ao excluir tarefa');
+                    if (typeof showErrorToast === 'function') {
+                        showErrorToast('😓 Connection error. Please try again.', 'Network Error');
+                    } else {
+                        alert('Error deleting task');
+                    }
                 });
         }
     }
@@ -265,7 +321,6 @@ $this->headTitle($title);
 
 <!-- Script para inicializar tooltips do Bootstrap -->
 <script>
-    // Inicializar todos os tooltips na página
     document.addEventListener('DOMContentLoaded', function() {
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
