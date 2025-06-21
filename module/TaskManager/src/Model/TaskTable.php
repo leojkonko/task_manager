@@ -377,4 +377,87 @@ class TaskTable
         $result = $this->tableGateway->update($data, ['id' => $id]);
         return $result > 0;
     }
+
+    /**
+     * Find tasks that are due within specified hours and need reminders
+     */
+    public function findTasksDueWithinHours(int $hours, bool $reminderSent = false): array
+    {
+        $select = $this->tableGateway->getSql()->select();
+        
+        // Calculate target datetime
+        $targetDateTime = new DateTime();
+        $targetDateTime->modify("+{$hours} hours");
+        
+        $where = new Where();
+        $where->equalTo('status', Task::STATUS_PENDING)
+            ->isNotNull('due_date')
+            ->lessThanOrEqualTo('due_date', $targetDateTime->format('Y-m-d H:i:s'))
+            ->greaterThan('due_date', date('Y-m-d H:i:s'))  // Not overdue yet
+            ->equalTo('reminder_sent', $reminderSent ? 1 : 0);
+        
+        $select->where($where)
+            ->join('users', 'tasks.user_id = users.id', ['email', 'full_name'])
+            ->order('due_date ASC');
+        
+        $resultSet = $this->tableGateway->selectWith($select);
+        return $this->resultSetToTaskArrayWithUser($resultSet);
+    }
+
+    /**
+     * Find all overdue tasks (for notifications)
+     */
+    public function findAllOverdueTasks(): array
+    {
+        $select = $this->tableGateway->getSql()->select();
+        
+        $where = new Where();
+        $where->in('status', [Task::STATUS_PENDING, Task::STATUS_IN_PROGRESS])
+            ->isNotNull('due_date')
+            ->lessThan('due_date', date('Y-m-d H:i:s'));
+        
+        $select->where($where)
+            ->join('users', 'tasks.user_id = users.id', ['email', 'full_name'])
+            ->order('due_date ASC');
+        
+        $resultSet = $this->tableGateway->selectWith($select);
+        return $this->resultSetToTaskArrayWithUser($resultSet);
+    }
+
+    /**
+     * Mark that a reminder has been sent for a task
+     */
+    public function markReminderSent(int $taskId): bool
+    {
+        $data = [
+            'reminder_sent' => 1,
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        
+        $result = $this->tableGateway->update($data, ['id' => $taskId]);
+        return $result > 0;
+    }
+
+    /**
+     * Convert ResultSet to array of Tasks with user information
+     */
+    private function resultSetToTaskArrayWithUser($resultSet): array
+    {
+        $tasks = [];
+        foreach ($resultSet as $row) {
+            $rowData = $row->getArrayCopy();
+            $task = $this->arrayToTask($rowData);
+            
+            // Add user information to task
+            if (isset($rowData['email']) && isset($rowData['full_name'])) {
+                $user = new \Auth\Model\User();
+                $user->setEmail($rowData['email']);
+                $user->setFullName($rowData['full_name']);
+                $task->setUser($user);
+            }
+            
+            $tasks[] = $task;
+        }
+        return $tasks;
+    }
 }

@@ -80,7 +80,8 @@ class TaskRepository implements TaskRepositoryInterface
         if (isset($criteria['user_id'])) {
             return $this->taskTable->findOverdueTasks($criteria['user_id']);
         }
-        return $this->taskTable->findOverdueTasks(0); // Todas as tarefas vencidas
+        // For notifications system - get all overdue tasks
+        return $this->taskTable->findAllOverdueTasks();
     }
 
     /**
@@ -209,5 +210,21 @@ class TaskRepository implements TaskRepositoryInterface
             $filters['user_id'] = $userId;
         }
         return $this->taskTable->fetchWithFilters($filters);
+    }
+
+    /**
+     * Find tasks that are due within specified hours and need reminders
+     */
+    public function findTasksDueWithinHours(int $hours, bool $reminderSent = false): array
+    {
+        return $this->taskTable->findTasksDueWithinHours($hours, $reminderSent);
+    }
+
+    /**
+     * Mark that a reminder has been sent for a task
+     */
+    public function markReminderSent(int $taskId): bool
+    {
+        return $this->taskTable->markReminderSent($taskId);
     }
 }

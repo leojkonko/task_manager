@@ -32,6 +32,7 @@ class Task
     private ?int $categoryId = null;
     private ?DateTime $createdAt = null;
     private ?DateTime $updatedAt = null;
+    private $user = null; // User object for notifications
 
     public function __construct()
     {
@@ -216,6 +217,23 @@ class Task
     public function setUpdatedAt(?DateTime $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
+        return $this;
+    }
+
+    /**
+     * Get user object (for notifications)
+     */
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    /**
+     * Set user object (for notifications)
+     */
+    public function setUser($user): self
+    {
+        $this->user = $user;
         return $this;
     }
 

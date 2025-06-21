@@ -262,6 +262,7 @@ return [
                 $taskRepository = $container->get(Repository\TaskRepository::class);
                 return new Service\TaskService($taskRepository);
             },
+            Service\EmailNotificationService::class => Factory\EmailNotificationServiceFactory::class,
             Repository\TaskRepository::class => function ($container) {
                 $taskTable = $container->get(Model\TaskTable::class);
                 return new Repository\TaskRepository($taskTable);

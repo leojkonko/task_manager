@@ -18,7 +18,8 @@
         "laminas/laminas-i18n": "^2.30",
         "laminas/laminas-mvc": "^3.7.0",
         "laminas/laminas-mvc-plugin-flashmessenger": "^1.11",
-        "laminas/laminas-skeleton-installer": "^1.3.0"
+        "laminas/laminas-skeleton-installer": "^1.3.0",
+        "swiftmailer/swiftmailer": "^6.3"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
@@ -64,12 +65,16 @@
         ],
         "setup": [
             "php scripts/setup/migrate_auth.php",
-            "php scripts/setup/check_database.php"
+            "php scripts/setup/check_database.php",
+            "php scripts/setup/migrate_email_notifications.php"
         ],
         "setup-auth": "php scripts/setup/migrate_auth.php",
+        "setup-email": "php scripts/setup/migrate_email_notifications.php",
         "check-db": "php scripts/setup/check_database.php",
         "test": "vendor/bin/phpunit",
-        "static-analysis": "vendor/bin/psalm --stats"
+        "static-analysis": "vendor/bin/psalm --stats",
+        "test-email": "php scripts/debug/test_email.php",
+        "send-notifications": "php scripts/maintenance/send_email_notifications.php"
     },
     "scripts-descriptions": {
         "clear-config-cache": "Clears merged config cache. Required for config changes to be applied.",

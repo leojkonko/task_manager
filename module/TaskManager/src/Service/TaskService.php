@@ -215,11 +215,15 @@ class TaskService
     }
 
     /**
-     * Busca tarefas vencidas de um usuário
+     * Busca tarefas vencidas de um usuário ou todas (para notificações)
      */
-    public function getOverdueTasks(int $userId): array
+    public function getOverdueTasks(int $userId = null): array
     {
-        return $this->taskRepository->findOverdueTasks(['user_id' => $userId]);
+        if ($userId !== null) {
+            return $this->taskRepository->findOverdueTasks(['user_id' => $userId]);
+        }
+        // For notifications system - get all overdue tasks
+        return $this->taskRepository->findOverdueTasks();
     }
 
     /**
@@ -607,5 +611,21 @@ class TaskService
         }
         
         return $errors ?: ['general' => [$message]];
+    }
+
+    /**
+     * Get tasks that need reminders (due within specified hours and not reminded yet)
+     */
+    public function getTasksDueWithinHours(int $hours, bool $reminderSent = false): array
+    {
+        return $this->taskRepository->findTasksDueWithinHours($hours, $reminderSent);
+    }
+
+    /**
+     * Mark that a reminder has been sent for a task
+     */
+    public function markReminderSent(int $taskId): bool
+    {
+        return $this->taskRepository->markReminderSent($taskId);
     }
 }
