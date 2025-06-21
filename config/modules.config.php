@@ -12,6 +12,7 @@ return [
     'Laminas\Router',
     'Laminas\Validator',
     'Laminas\Form', // Added this line to enable form view helpers
+    'Auth', // Módulo de autenticação
     'Application',
     'TaskManager',
 ];

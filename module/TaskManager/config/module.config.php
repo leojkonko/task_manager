@@ -244,7 +244,8 @@ return [
         'factories' => [
             Controller\TaskController::class => function ($container) {
                 return new Controller\TaskController(
-                    $container->get(Service\TaskService::class)
+                    $container->get(Service\TaskService::class),
+                    $container->get(\Auth\Service\AuthenticationManager::class)
                 );
             },
             Controller\ApiController::class => function ($container) {

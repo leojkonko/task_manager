@@ -9,6 +9,7 @@ use TaskManager\Entity\Task;
 use TaskManager\Form\TaskForm;
 use TaskManager\Validator\TaskBackendValidator;
 use TaskManager\Helper\MessageHelper;
+use Auth\Service\AuthenticationManager;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
@@ -20,10 +21,36 @@ use Laminas\Http\Request;
 class TaskController extends AbstractActionController
 {
     private TaskService $taskService;
+    private AuthenticationManager $authManager;
 
-    public function __construct(TaskService $taskService)
+    public function __construct(TaskService $taskService, AuthenticationManager $authManager)
     {
         $this->taskService = $taskService;
+        $this->authManager = $authManager;
+    }
+
+    /**
+     * Verifica se o usuário está autenticado
+     */
+    private function requireAuthentication()
+    {
+        if (!$this->authManager->isLoggedIn()) {
+            $this->flashMessenger()->addErrorMessage('You need to be logged in to access this page.');
+            return $this->redirect()->toRoute('auth/login');
+        }
+        return true;
+    }
+
+    /**
+     * Obtém o ID do usuário atual
+     */
+    private function getCurrentUserId(): int
+    {
+        $user = $this->authManager->getCurrentUser();
+        if (!$user) {
+            throw new \RuntimeException('Usuário não autenticado');
+        }
+        return $user->getId();
     }
 
     /**
@@ -31,9 +58,12 @@ class TaskController extends AbstractActionController
      */
     public function indexAction()
     {
-        // Por enquanto, vamos usar um usuário fixo para teste
-        // Em uma implementação real, o ID do usuário viria da sessão/autenticação
-        $userId = 1;
+        $authCheck = $this->requireAuthentication();
+        if ($authCheck !== true) {
+            return $authCheck;
+        }
+
+        $userId = $this->getCurrentUserId();
 
         $page = (int) $this->params()->fromQuery('page', 1);
         $limit = (int) $this->params()->fromQuery('limit', 10);
@@ -89,6 +119,7 @@ class TaskController extends AbstractActionController
             'filters' => $filters,
             'availableStatuses' => Task::getAvailableStatuses(),
             'availablePriorities' => Task::getAvailablePriorities(),
+            'currentUser' => $this->authManager->getCurrentUser()->toArray(),
         ]);
     }
 
@@ -97,6 +128,11 @@ class TaskController extends AbstractActionController
      */
     public function viewAction()
     {
+        $authCheck = $this->requireAuthentication();
+        if ($authCheck !== true) {
+            return $authCheck;
+        }
+
         $id = (int) $this->params()->fromRoute('id', 0);
 
         if (!$id) {
@@ -118,6 +154,12 @@ class TaskController extends AbstractActionController
             return $this->redirect()->toRoute('task-manager');
         }
 
+        // Verificar se a tarefa pertence ao usuário atual
+        if ($task->getUserId() !== $this->getCurrentUserId()) {
+            $this->flashMessenger()->addErrorMessage('You do not have permission to view this task.');
+            return $this->redirect()->toRoute('task-manager');
+        }
+
         $request = $this->getRequest();
         if ($request instanceof Request && $request->getHeader('X-Requested-With')) {
             return new JsonModel([
@@ -130,6 +172,7 @@ class TaskController extends AbstractActionController
             'task' => $task->toArray(),
             'availableStatuses' => Task::getAvailableStatuses(),
             'availablePriorities' => Task::getAvailablePriorities(),
+            'currentUser' => $this->authManager->getCurrentUser()->toArray(),
         ]);
     }
 
@@ -138,6 +181,11 @@ class TaskController extends AbstractActionController
      */
     public function createAction()
     {
+        $authCheck = $this->requireAuthentication();
+        if ($authCheck !== true) {
+            return $authCheck;
+        }
+
         $form = new TaskForm();
         $form->get('submit')->setValue('Criar Tarefa');
 
@@ -188,7 +236,7 @@ class TaskController extends AbstractActionController
             if ($form->isValid()) {
                 try {
                     $data = $form->getTaskData();
-                    $data['user_id'] = 1; // Usuário fixo para teste
+                    $data['user_id'] = $this->getCurrentUserId(); // Usar usuário autenticado
 
                     // Validação final antes de criar
                     TaskBackendValidator::validateAndThrow($data, true);
@@ -246,6 +294,11 @@ class TaskController extends AbstractActionController
      */
     public function editAction()
     {
+        $authCheck = $this->requireAuthentication();
+        if ($authCheck !== true) {
+            return $authCheck;
+        }
+
         $id = (int) $this->params()->fromRoute('id', 0);
 
         if (!$id) {
@@ -256,6 +309,12 @@ class TaskController extends AbstractActionController
 
         if (!$task) {
             $this->flashMessenger()->addErrorMessage(MessageHelper::getErrorMessage('not_found'));
+            return $this->redirect()->toRoute('task-manager');
+        }
+
+        // Verificar se a tarefa pertence ao usuário atual
+        if ($task->getUserId() !== $this->getCurrentUserId()) {
+            $this->flashMessenger()->addErrorMessage('Você não tem permissão para editar esta tarefa.');
             return $this->redirect()->toRoute('task-manager');
         }
 
