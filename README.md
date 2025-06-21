@@ -1,3 +1,4 @@
+![alt text](image.png)
 # Task Manager System
 
 A complete task management system developed with PHP, MySQL and Laminas Framework, featuring secure authentication and modern UI design.

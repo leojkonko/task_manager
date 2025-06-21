@@ -18,4 +18,3 @@ $pdo->exec("CREATE TABLE user_sessions (
 )");
 
 echo "Tabela user_sessions criada com sucesso!";
-?>

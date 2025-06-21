@@ -51,7 +51,6 @@ class AuthService
             // Login bem-sucedido
             $this->handleSuccessfulLogin($user, $ipAddress, $userAgent);
             return $user;
-
         } catch (PDOException $e) {
             error_log("Authentication error: " . $e->getMessage());
             return null;
@@ -78,7 +77,6 @@ class AuthService
 
             $userId = $this->pdo->lastInsertId();
             return $this->findUserById((int)$userId);
-
         } catch (PDOException $e) {
             error_log("Registration error: " . $e->getMessage());
             return null;
@@ -205,9 +203,14 @@ class AuthService
                 $user->getId()
             ]);
 
-            $this->logAuthAttempt($user->getId(), $user->getUsername(), $action, $ipAddress, $userAgent, 
-                "Failed attempt #{$newAttempts}");
-
+            $this->logAuthAttempt(
+                $user->getId(),
+                $user->getUsername(),
+                $action,
+                $ipAddress,
+                $userAgent,
+                "Failed attempt #{$newAttempts}"
+            );
         } catch (PDOException $e) {
             error_log("Failed login handling error: " . $e->getMessage());
         }
@@ -222,7 +225,6 @@ class AuthService
             $stmt->execute([$user->getId()]);
 
             $this->logAuthAttempt($user->getId(), $user->getUsername(), 'login_success', $ipAddress, $userAgent);
-
         } catch (PDOException $e) {
             error_log("Successful login handling error: " . $e->getMessage());
         }
@@ -268,7 +270,7 @@ class AuthService
 
         $user->setId((int)$data['id']);
         $user->setStatus($data['status']);
-        
+
         // Verificar se as colunas de autenticação existem (para compatibilidade com banco não migrado)
         $user->setEmailVerified(isset($data['email_verified']) ? (bool)$data['email_verified'] : false);
         $user->setFailedLoginAttempts(isset($data['failed_login_attempts']) ? (int)$data['failed_login_attempts'] : 0);

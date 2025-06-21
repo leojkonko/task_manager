@@ -43,7 +43,7 @@ class AuthController extends AbstractActionController
                 if ($user) {
                     // Criar sessão
                     $sessionId = $this->authService->createSession($user->getId(), $ipAddress, $userAgent);
-                    
+
                     // Definir cookie de sessão
                     setcookie('auth_session', $sessionId, [
                         'expires' => time() + 86400, // 24 horas
@@ -86,7 +86,7 @@ class AuthController extends AbstractActionController
 
         if ($request instanceof Request && $request->isPost()) {
             $postData = $request->getPost()->toArray();
-            
+
             $username = trim($postData['username'] ?? '');
             $email = trim($postData['email'] ?? '');
             $password = $postData['password'] ?? '';
@@ -95,7 +95,7 @@ class AuthController extends AbstractActionController
 
             // Basic validations
             $errors = [];
-            
+
             if (empty($username)) {
                 $errors[] = 'Username is required.';
             } elseif (strlen($username) < 3) {
@@ -158,11 +158,11 @@ class AuthController extends AbstractActionController
     public function logoutAction()
     {
         $sessionId = $_COOKIE['auth_session'] ?? null;
-        
+
         if ($sessionId) {
             $this->authService->destroySession($sessionId);
         }
-        
+
         // Remover cookie
         setcookie('auth_session', '', [
             'expires' => time() - 3600,
@@ -183,23 +183,23 @@ class AuthController extends AbstractActionController
     private function getClientIp(): string
     {
         $ipKeys = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'REMOTE_ADDR'];
-        
+
         foreach ($ipKeys as $key) {
             if (!empty($_SERVER[$key])) {
                 $ip = $_SERVER[$key];
-                
+
                 // Se há múltiplos IPs, pegar o primeiro
                 if (strpos($ip, ',') !== false) {
                     $ip = trim(explode(',', $ip)[0]);
                 }
-                
+
                 // Validar IP
                 if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
                     return $ip;
                 }
             }
         }
-        
+
         return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     }
 }

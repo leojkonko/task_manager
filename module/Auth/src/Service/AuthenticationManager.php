@@ -23,7 +23,7 @@ class AuthenticationManager
         if (!$this->initialized) {
             $this->initializeCurrentUser();
         }
-        
+
         return $this->currentUser;
     }
 
@@ -56,26 +56,26 @@ class AuthenticationManager
     public function login(string $username, string $password, string $ipAddress, string $userAgent): ?User
     {
         $user = $this->authService->authenticate($username, $password, $ipAddress, $userAgent);
-        
+
         if ($user) {
             $this->currentUser = $user;
             $this->initialized = true;
         }
-        
+
         return $user;
     }
 
     public function logout(): void
     {
         $sessionId = $_COOKIE['auth_session'] ?? null;
-        
+
         if ($sessionId) {
             $this->authService->destroySession($sessionId);
         }
-        
+
         $this->currentUser = null;
         $this->initialized = true;
-        
+
         // Remover cookie
         setcookie('auth_session', '', [
             'expires' => time() - 3600,
@@ -90,15 +90,15 @@ class AuthenticationManager
     private function initializeCurrentUser(): void
     {
         $this->initialized = true;
-        
+
         $sessionId = $_COOKIE['auth_session'] ?? null;
-        
+
         if (!$sessionId) {
             return;
         }
 
         $user = $this->authService->validateSession($sessionId);
-        
+
         if ($user && $user->isActive() && !$user->isLocked()) {
             $this->currentUser = $user;
         } else {

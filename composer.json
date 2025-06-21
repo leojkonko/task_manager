@@ -63,11 +63,11 @@
             "php -S 0.0.0.0:8080 -t public"
         ],
         "setup": [
-            "php migrate_auth.php",
-            "php check_database.php"
+            "php scripts/setup/migrate_auth.php",
+            "php scripts/setup/check_database.php"
         ],
-        "setup-auth": "php migrate_auth.php",
-        "check-db": "php check_database.php",
+        "setup-auth": "php scripts/setup/migrate_auth.php",
+        "check-db": "php scripts/setup/check_database.php",
         "test": "vendor/bin/phpunit",
         "static-analysis": "vendor/bin/psalm --stats"
     },

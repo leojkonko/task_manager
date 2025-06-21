@@ -1,3 +1,4 @@
+![alt text](image.png)
 # Quick Installation Guide
 
 ## Prerequisites

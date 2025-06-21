@@ -78,7 +78,7 @@ try {
     // Carregar configuração da aplicação
     $appConfig = require __DIR__ . '/config/application.config.php';
     echo "✓ Configuração da aplicação carregada\n";
-    
+
     // Verificar se Auth está na lista de módulos
     $modules = require __DIR__ . '/config/modules.config.php';
     if (in_array('Auth', $modules)) {
@@ -86,7 +86,6 @@ try {
     } else {
         echo "✗ Módulo Auth NÃO está listado em modules.config.php\n";
     }
-    
 } catch (Exception $e) {
     echo "✗ Erro na inicialização: " . $e->getMessage() . "\n";
     echo "Stack trace: " . $e->getTraceAsString() . "\n";
