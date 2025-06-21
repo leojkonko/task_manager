@@ -31,6 +31,29 @@ A complete task management system developed with PHP, MySQL and Laminas Framewor
 - Highlight for overdue tasks
 - Responsive and modern interface
 
+### 📧 Email Notifications
+- **Task Reminders** - Automated reminders sent before due dates
+- **Overdue Alerts** - Notifications for tasks that have passed their due date
+- **Professional Templates** - HTML email templates with responsive design
+- **Mailtrap Integration** - Easy setup for development and testing
+
+## 📚 Documentation
+
+This project includes comprehensive documentation for all features and systems:
+
+- **[📖 Main Documentation](documentations/README.md)** - Complete system overview and features
+- **[🔐 Authentication System](documentations/authentication/AUTHENTICATION.md)** - Detailed authentication documentation
+- **[📧 Email Notifications](documentations/EMAIL_NOTIFICATIONS.md)** - Complete email notification system guide
+- **[🚀 Installation Guide](documentations/installation/INSTALL.md)** - Quick installation steps
+- **[🔌 API Documentation](documentations/api/API_DOCUMENTATION.md)** - Complete API reference for Postman
+- **[⚖️ Legal Information](documentations/legal/)** - License and copyright information
+
+### Quick Documentation Links
+- **Setup & Installation**: [INSTALL.md](documentations/installation/INSTALL.md)
+- **Authentication Details**: [AUTHENTICATION.md](documentations/authentication/AUTHENTICATION.md)
+- **Email System Setup**: [EMAIL_NOTIFICATIONS.md](documentations/EMAIL_NOTIFICATIONS.md)
+- **API Testing**: [API_DOCUMENTATION.md](documentations/api/API_DOCUMENTATION.md)
+
 ## 🛠️ Technologies
 
 - **Backend**: PHP 8.1+
